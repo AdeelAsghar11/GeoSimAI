@@ -32,17 +32,18 @@ Track active, completed, and pending tasks. Check items off immediately when com
 ---
 
 ## Phase 2: Web Interface & API Integration
-- [ ] Implement Flask application factory and core configuration (`src/config.py`, `src/__init__.py`).
-- [ ] Implement `GET /api/health` and `GET /api/metadata` endpoints (`src/api/routes.py`).
-- [ ] Implement `POST /api/extract` endpoint returning point/polygon embedding signatures (`src/api/routes.py`).
-- [ ] Implement `POST /api/similarity` endpoint returning tile URLs and top-N ranked matches (`src/api/routes.py`).
-- [ ] Build basic HTML5/CSS single-page application structure (`src/static/index.html`, `src/static/css/style.css`).
-- [ ] Integrate Leaflet.js map with tile providers and click-to-pick coordinate marker (`src/static/js/app.js`).
-- [ ] Add AOI bounding box or polygon drawing tool to map.
-- [ ] Add control panel for selecting year (2017–2024), threshold slider, and top-N limit.
-- [ ] Implement dynamic Earth Engine tile layer overlay on Leaflet when query finishes.
-- [ ] Implement ranked results sidebar table with click-to-zoom on matched coordinates.
-- [ ] Add loading indicators and friendly error handling for quota/network timeouts.
+- [x] Implement Flask application factory and core configuration (`run.py`, `src/config.py`, `src/__init__.py`).
+- [x] Implement `GET /api/health` and `GET /api/metadata` endpoints (`src/api/routes.py`).
+- [x] Implement `POST /api/extract` endpoint returning point/polygon embedding signatures (`src/api/routes.py`).
+- [x] Implement `POST /api/similarity` endpoint returning tile URLs and top-N ranked matches (`src/api/routes.py`).
+- [x] Build basic HTML5/CSS single-page application structure (`src/static/index.html`, `src/static/css/style.css`).
+- [x] Integrate Leaflet.js map with tile providers and click-to-pick coordinate marker (`src/static/js/app.js`).
+- [x] Add AOI bounding box overlay and click-to-pick coordinate tool.
+- [x] Add control panel for selecting year (2017–2024), threshold slider, and top-N limit.
+- [x] Implement dynamic Earth Engine tile layer overlay on Leaflet when query finishes.
+- [x] Implement ranked results sidebar table with click-to-zoom on matched coordinates.
+- [x] Add loading indicators and friendly error handling for quota/network timeouts.
+
 
 ---
 
