@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Environment Variables & Secrets
+.env
+.env.local
+*.pem
+*.key
+credentials.json
+service_account.json
+
+# FYP Proposal Folder (as requested)
+proposal/
+proposal
+
+# Earth Engine & Cloud
+.ee/
+credentials
+
+# SQLite & Data
+*.sqlite3
+*.db
+data/cache/
+data/downloads/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Jupyter / Scratch notebooks
+.ipynb_checkpoints/
+scratch/
