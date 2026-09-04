@@ -4,9 +4,49 @@ Reverse-chronological log of engineering and research sessions. Add new sessions
 
 ---
 
-## 2026-09-04
+## 2026-09-04 (Session 2)
 
 **Did:**
+- Resolved all open questions in [docs/PRD.md](file:///d:/GeoSimAI/docs/PRD.md) and aligned [docs/roadmap.md](file:///d:/GeoSimAI/docs/roadmap.md):
+  - Established canonical benchmark AOI: Islamabad/Rawalpindi twin cities (`[72.80, 33.45, 73.25, 33.82]`, ~1,720 km²).
+  - Established benchmark year: 2023.
+  - Formally deferred clustering (FR-008) and SQLite persistence to Phase 4 (Stretch).
+  - Target milestone locked to Phase 1 (Working CLI/pipeline).
+  - Formulated 3 validation case studies: (A) Potohar agriculture, (B) Rawal Lake deep water, (C) Fatima Jinnah Park urban greenery vs. Margalla forest.
+- Generated `requirements.txt` with `earthengine-api`, `google-auth`, `flask`, `numpy`, `pandas`, `scikit-learn`, and `pytest`.
+- Created Python 3.10 virtual environment (`venv`) and installed all dependencies.
+- Created `src/` modular layout: `src/config.py`, `src/core/`, `src/api/`, `src/static/`.
+- Implemented `src/core/smoke_test.py` for GEE connectivity checks.
+- Wrote and passed 5 unit tests in `tests/test_similarity.py` (unit vector dot product, normalization, orthogonality, and mean pooling).
+
+- Completed Phase 1 (Core Similarity Engine MVP Backend):
+  - [src/core/client.py](file:///d:/GeoSimAI/src/core/client.py): Earth Engine initialization with ADC/Service Account fallback and AlphaEarth annual composite loader with spatial filtering and multi-tile mosaicking.
+  - [src/core/extraction.py](file:///d:/GeoSimAI/src/core/extraction.py): Point coordinate 64-D extraction and spatial polygon mean-pooling aggregation with unit L2 re-normalization.
+  - [src/core/similarity.py](file:///d:/GeoSimAI/src/core/similarity.py): Server-side in-engine array dot product, Slippy map XYZ tile URL generator, and thresholded top-N candidate sampling with spatial deduplication.
+  - [src/core/pipeline.py](file:///d:/GeoSimAI/src/core/pipeline.py): End-to-end CLI runner supporting preset validation case studies, custom coordinates, thresholding, and JSON output export.
+  - [tests/test_extraction.py](file:///d:/GeoSimAI/tests/test_extraction.py) & [tests/test_similarity.py](file:///d:/GeoSimAI/tests/test_similarity.py): 8 automated unit tests written and passing cleanly via pytest.
+
+- Configured and authenticated live Google Earth Engine project `geosimai`:
+  - Successfully linked project via `earthengine set_project geosimai` and `.env`.
+  - [src/core/smoke_test.py](file:///d:/GeoSimAI/src/core/smoke_test.py) passed: verified dataset `GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL` and all 64 bands (`A00`–`A63`).
+  - Executed live pipeline on **Case Study B (Rawal Lake Water)**: returned live XYZ tile layer and ranked water bodies (Rawal Lake: 0.9833, Rama/Misriot Dam: 0.9574, Khanpur Dam: 0.9444).
+  - Executed live pipeline on **Case Study C (Fatima Jinnah Park Vegetation)**: returned live XYZ tile layer and retrieved urban park/botanical canopies (Shakarparian: 0.9204, Rawal parkland: 0.9062).
+
+**Next:**
+- Proceed to Phase 2: Web Interface & API Integration:
+  - Implement Flask application factory and REST endpoints in `src/api/routes.py` (`/api/health`, `/api/metadata`, `/api/extract`, `/api/similarity`).
+  - Build single-page interactive Leaflet map interface in `src/static/` (coordinate picking, AOI polygon drawing, similarity heatmap tile layer overlay, and top-N ranked match table).
+  - Connect frontend controls to Flask backend.
+
+**Blockers:**
+- None. Phase 0 and Phase 1 are 100% complete with live Earth Engine integration verified.
+
+
+
+---
+
+## 2026-09-04 (Session 1)
+
 - Initialized local Git repository and attached remote URL `git@github.com:AdeelAsghar11/GeoSimAI.git`.
 - Added `.gitignore` configured to ignore virtual environments, secrets, caches, database files, and the local `proposal/` directory.
 - Extracted and analyzed the source FYP proposal document (`proposal/GeoSimAI.docx`, supervised by Dr. Abdul Majid).

@@ -9,22 +9,25 @@ Track active, completed, and pending tasks. Check items off immediately when com
 - [x] Create `.gitignore` ignoring virtual environments, secrets, proposal directory, and temporary data.
 - [x] Create cross-tool agent guidelines (`AGENTS.md` and `CLAUDE.md`).
 - [x] Scaffold living documentation system (`docs/PRD.md`, `docs/TRD.md`, `docs/roadmap.md`, `docs/tasks.md`, `docs/progress.md`, `docs/decisions.md`, `README.md`).
-- [ ] Create Python virtual environment (`venv`) and initial `requirements.txt` (`earthengine-api`, `google-auth`, `flask`, `numpy`, `pandas`, `scikit-learn`, `pytest`).
-- [ ] Register Google Cloud Project and configure Earth Engine Community Tier access (150 EECU-hours/mo).
-- [ ] Establish Earth Engine authentication (local `earthengine authenticate` or Service Account credentials).
-- [ ] Write a smoke test script (`src/core/smoke_test.py`) to verify Earth Engine connectivity and collection accessibility.
+- [x] Create Python virtual environment (`venv`) and initial `requirements.txt` (`earthengine-api`, `google-auth`, `flask`, `numpy`, `pandas`, `scikit-learn`, `pytest`).
+- [x] Write a smoke test script (`src/core/smoke_test.py`) to verify Earth Engine connectivity and collection accessibility.
+- [x] Register Google Cloud Project and configure Earth Engine Community Tier access (150 EECU-hours/mo) — Project: `geosimai`.
+- [x] Establish Earth Engine authentication (local `earthengine authenticate` and `earthengine set_project geosimai`).
+
+
 
 ---
 
 ## Phase 1: Core Similarity Engine (MVP Backend)
-- [ ] Implement GEE client initialization wrapper with ADC and local fallback (`src/core/client.py`).
-- [ ] Implement embedding extraction module for single point coordinates (`src/core/extraction.py`).
-- [ ] Implement spatial mean-pooling aggregation for polygon geometries (`src/core/extraction.py`).
-- [ ] Implement server-side vector dot product computation for candidate AOI pixels (`src/core/similarity.py`).
-- [ ] Implement similarity score clipping and tile visualization map ID generator (`src/core/similarity.py`).
-- [ ] Implement top-N candidate coordinate sampling and descending ranking (`src/core/similarity.py`).
-- [ ] Create an end-to-end prototype runner / demo script to execute a sample query and print results.
-- [ ] Write automated unit tests for vector normalization and similarity math (`tests/test_similarity.py`).
+- [x] Implement GEE client initialization wrapper with ADC and local fallback (`src/core/client.py`).
+- [x] Implement embedding extraction module for single point coordinates (`src/core/extraction.py`).
+- [x] Implement spatial mean-pooling aggregation for polygon geometries (`src/core/extraction.py`).
+- [x] Implement server-side vector dot product computation for candidate AOI pixels (`src/core/similarity.py`).
+- [x] Implement similarity score clipping and tile visualization map ID generator (`src/core/similarity.py`).
+- [x] Implement top-N candidate coordinate sampling and descending ranking (`src/core/similarity.py`).
+- [x] Create an end-to-end prototype runner / demo script to execute a sample query and print results (`src/core/pipeline.py`).
+- [x] Write automated unit tests for vector normalization and similarity math (`tests/test_similarity.py`, `tests/test_extraction.py`).
+
 
 ---
 

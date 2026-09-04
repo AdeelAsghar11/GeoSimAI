@@ -11,22 +11,24 @@ This document outlines the phased development roadmap for GeoSimAI. Each phase d
 ### Milestones
 - [x] Repository initialization (`git init`, `.gitignore`, remote linked).
 - [x] Persistent documentation scaffolding (`AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/*`).
+- [x] Local Python virtual environment created with core dependencies installed (`earthengine-api`, `flask`, `numpy`, `pandas`, `scikit-learn`, `pytest`).
 - [ ] Google Cloud project registered and Earth Engine API enabled on Community Tier (150 EECU-hours/month).
-- [ ] Local Python virtual environment created with initial dependencies installed.
 - [ ] Service Account ADC or local authentication confirmed working.
 
 ---
 
-## Phase 1: Core Similarity Engine (MVP Backend)
+## Phase 1: Core Similarity Engine (MVP Backend — Target Milestone)
 - **One-Line Goal:** Build and verify the core Python processing pipeline for embedding extraction, mean pooling, dot-product similarity computation, and ranked retrieval without a web UI.
-- **One-Line Exit Criterion:** A standalone Python script or Jupyter notebook takes arbitrary reference coordinates, an AOI, and a year, and outputs ranked similar coordinates with scores and a generated tile map ID.
+- **Target Milestone Status:** Primary target deliverable. *(Note: Adeel to confirm with supervisor/committee if a specific evaluation checkpoint requires web UI demonstration earlier).*
+- **One-Line Exit Criterion:** A standalone Python script or notebook takes arbitrary reference coordinates, an AOI, and a year, and outputs ranked similar coordinates with scores and a generated tile map ID.
 
 ### Milestones
-- [ ] Earth Engine wrapper module for dataset loading and year/AOI spatial filtering.
-- [ ] Point extraction and polygon mean-pooling aggregation logic.
-- [ ] In-engine vector dot product computation pipeline across candidate AOI pixels.
-- [ ] Top-N coordinate extraction and similarity score ranking routines.
-- [ ] Unit tests covering array math, normalization, and bounds validation.
+- [ ] Earth Engine client wrapper module with authentication & initialization (`src/core/client.py`).
+- [ ] Embedding extraction module for points and mean-pooled polygons (`src/core/extraction.py`).
+- [ ] In-engine vector dot product computation pipeline across candidate AOI pixels (`src/core/similarity.py`).
+- [ ] Top-N coordinate extraction and similarity score ranking routines (`src/core/similarity.py`).
+- [ ] End-to-end CLI execution script with benchmark AOI defaults (`src/core/pipeline.py`).
+- [ ] Automated unit tests for vector math, pooling, and ranking (`tests/test_similarity.py`, `tests/test_extraction.py`).
 
 ---
 
@@ -45,22 +47,26 @@ This document outlines the phased development roadmap for GeoSimAI. Each phase d
 
 ## Phase 3: Validation & Empirical Evaluation
 - **One-Line Goal:** Validate the retrieval pipeline using concrete ground-truth case studies with quantitative fidelity metrics.
-- **One-Line Exit Criterion:** An evaluation report documenting retrieval accuracy, score distributions, and confusion analysis for 2–3 specific environmental scenarios.
+- **One-Line Exit Criterion:** An evaluation report documenting retrieval accuracy, score distributions, and confusion analysis for 3 specific environmental scenarios.
 
 ### Milestones
-- [ ] Define 2–3 concrete evaluation case studies (e.g., water bodies, agricultural crops, dense urban vs. forest).
-- [ ] Execute similarity queries against known ground-truth locations and collect score distributions.
-- [ ] Analyze false positive / false negative patterns and score sensitivity across thresholds.
+- [ ] Benchmark Area of Interest established: Islamabad/Rawalpindi metropolitan region (`[72.80, 33.45, 73.25, 33.82]`, Year: 2023).
+- [ ] **Case Study A:** Potohar plateau agricultural land retrieval (`[73.140, 33.670]`) vs. urban and barren land.
+- [ ] **Case Study B:** Rawal Lake deep water delineation (`[73.123, 33.702]`) vs. regional water bodies & dry land.
+- [ ] **Case Study C:** Islamabad urban greenery (Fatima Jinnah Park, `[73.018, 33.704]`) vs. Margalla forest canopy (`[73.060, 33.750]`) vs. built-up.
+- [ ] Collect similarity score distributions and analyze false positive / false negative patterns.
 - [ ] Compile quantitative evaluation tables and visual comparison figures for the FYP report.
 
 ---
 
-## Phase 4: Extensions & Stretch Goals
+## Phase 4: Extensions & Stretch Goals (Deferred)
 - **One-Line Goal:** Implement secondary analytical features including spatial clustering, session persistence, and deployment hardening.
+- **Scope Notice:** Explicitly deferred until Phases 1–3 are fully validated.
 - **One-Line Exit Criterion:** An analyst can perform k-means spatial clustering over an AOI and export or bookmark historical query sessions.
 
 ### Milestones
-- [ ] Unsupervised spatial clustering (`ee.Clusterer.wekaKMeans`) across the 64 embedding dimensions.
+- [ ] Unsupervised spatial clustering (`ee.Clusterer.wekaKMeans`, FR-008) across the 64 embedding dimensions.
 - [ ] SQLite database integration for saving query sessions, bookmarked sites, and user annotations.
 - [ ] Containerization (Dockerfile) and deployment configuration for Google Cloud Run / Render free tier.
 - [ ] UI polish and responsive layout refinement.
+

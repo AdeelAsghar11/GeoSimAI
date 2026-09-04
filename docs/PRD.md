@@ -123,16 +123,39 @@ To maintain technical focus and respect computational quotas, the following are 
 
 ---
 
-## 8. Open Questions & Clarifications Needed
+## 8. Resolved Domain Specifications (Formerly Open Questions)
 
-> [!IMPORTANT]
-> The following items are gaps in the source FYP proposal that must be resolved with project supervisors before or during Phase 1 execution:
+The initial gaps in the source FYP proposal have been resolved as follows:
 
-1. **[NEEDS CLARIFICATION: Default Study AOI & Target Year]**
-   What specific geographic region(s) (e.g., Islamabad/Rawalpindi district, Indus Basin agricultural sector, or a specific forest reserve) and default calendar year should be established as the canonical benchmark demo for the project?
-2. **[NEEDS CLARIFICATION: Scope of Clustering and Database Persistence]**
-   Are spatial clustering (FR-008) and persistent user session databases (SQLite/PostgreSQL) strictly committed deliverables for the core FYP evaluation, or are they formally designated as stretch goals to be tackled only after the core similarity workflow is validated?
-3. **[NEEDS CLARIFICATION: Definition of "Done" for Current Milestone]**
-   What is the specific milestone deliverable expected for the upcoming evaluation committee: a finalized proposal and technical specification, a working local CLI/notebook prototype, or a fully deployed live web demonstration?
-4. **[NEEDS CLARIFICATION: Concrete Validation Case Studies]**
-   Which 2 to 3 concrete ground-truth scenarios will anchor the formal validation chapter? (e.g., Case Study 1: Agricultural crop field retrieval; Case Study 2: Water body / reservoir delineation; Case Study 3: Urban vs. peri-urban vegetation contrast).
+1. **Benchmark Study AOI & Default Target Year:**
+   - **Canonical Region:** Islamabad/Rawalpindi Twin-Cities Metropolitan & Peri-Urban Region (Pakistan).
+   - **Characteristics:** Compact, diverse zone encompassing dense unplanned urban fabric, planned urban grid, urban greenery, protected sub-Himalayan forest canopy (Margalla Hills), major water bodies (Rawal Lake, Simly catchment), and rainfed agricultural parcels.
+   - **Bounding Box (WGS84 `[min_lon, min_lat, max_lon, max_lat]`):** `[72.80, 33.45, 73.25, 33.82]`
+   - **Bounding Polygon (GeoJSON format):**
+     ```json
+     {
+       "type": "Polygon",
+       "coordinates": [[
+         [72.80, 33.45],
+         [73.25, 33.45],
+         [73.25, 33.82],
+         [72.80, 33.82],
+         [72.80, 33.45]
+       ]]
+     }
+     ```
+   - **Spatial Extent:** ~41 km (N-S) × 42 km (E-W) ≈ 1,720 km².
+   - **Benchmark Calendar Year:** `2023` (most recent complete cloud-free annual embedding composite).
+
+2. **Scope of Clustering and Database Persistence:**
+   - Spatial clustering (FR-008, `ee.Clusterer`) and database session persistence (SQLite) are formally **deferred to Phase 4 (Extensions & Stretch Goals)** per the original proposal's optional designation.
+   - Phases 1 through 3 target strictly the core similarity extraction/search engine, interactive web UI, and empirical validation.
+
+3. **Milestone Deliverable Target:**
+   - **Current Target:** **Phase 1 (Working CLI / Python Core Pipeline)**. Produces a verifiable command-line runner and modules (`src/core/`) that take coordinates/AOI, execute Earth Engine vector dot products, and output ranked candidate coordinates with map tile IDs.
+
+4. **Concrete Validation Case Studies:**
+   - **Case Study A (Agricultural Lands):** Reference parcel in Potohar plateau / Chak Shahzad rainfed cropland (`[73.140, 33.670]`) evaluated for retrieval across the Potohar agricultural belt vs. urban and barren land.
+   - **Case Study B (Water Body Delineation):** Deep water reference point in Rawal Lake (`[73.123, 33.702]`) evaluated against Simly Dam, river beds, and terrestrial land covers.
+   - **Case Study C (Urban Greenery vs. Natural Forest):** Reference canopy in Islamabad urban park (Fatima Jinnah Park, `[73.018, 33.704]`) evaluated against dense Margalla Hills natural reserve (`[73.060, 33.750]`) and surrounding built-up sectors.
+
