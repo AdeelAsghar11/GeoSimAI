@@ -1,6 +1,6 @@
 /**
  * GeoSimAI — Frontend Application Logic
- * Interactive Leaflet Map & Earth Engine Similarity Search Client
+ * Interactive Leaflet Map & Earth Engine Similarity Search & Clustering Client
  */
 
 // Benchmark AOI bounds [min_lon, min_lat, max_lon, max_lat]
@@ -32,6 +32,8 @@ const state = {
   threshold: 0.75,
   topN: 10,
   opacity: 0.85,
+  clusterK: 5,
+  clusterOpacity: 0.75,
   isPicking: false,
   lastResult: null
 };
@@ -43,6 +45,7 @@ let currentBaseLayer;
 let aoiRectangle;
 let refMarkerLayer;
 let heatmapLayer = null;
+let clusteringLayer = null;
 let matchMarkersLayer;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -50,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initEventListeners();
   checkBackendHealth();
   updateRefMarker();
+  loadBookmarks();
+  loadHistory();
 });
 
 /**
@@ -181,6 +186,24 @@ function disablePickingMode() {
  * Event Listeners Setup
  */
 function initEventListeners() {
+  // Navigation Tabs Switching
+  document.querySelectorAll('.tab-btn').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+
+      tab.classList.add('active');
+      const paneId = tab.getAttribute('data-pane');
+      const targetPane = document.getElementById(paneId);
+      if (targetPane) targetPane.style.display = 'block';
+
+      if (paneId === 'paneBookmarks') {
+        loadBookmarks();
+        loadHistory();
+      }
+    });
+  });
+
   // Preset buttons
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -196,6 +219,14 @@ function initEventListeners() {
 
   // Pick on Map Button
   document.getElementById('btnPickPoint').addEventListener('click', togglePickingMode);
+
+  // Bookmark current location button
+  document.getElementById('btnBookmarkCurrent').addEventListener('click', () => {
+    const name = prompt('Enter a name for this bookmark:', state.currentRef.label);
+    if (name) {
+      saveBookmark(name, state.currentRef.lon, state.currentRef.lat);
+    }
+  });
 
   // Year select
   document.getElementById('yearSelect').addEventListener('change', (e) => {
@@ -218,7 +249,7 @@ function initEventListeners() {
     state.topN = parseInt(e.target.value);
   });
 
-  // CTA Execute Button
+  // CTA Execute Similarity Button
   document.getElementById('btnRunSimilarity').addEventListener('click', executeSimilaritySearch);
 
   // Heatmap visibility toggle
@@ -238,6 +269,34 @@ function initEventListeners() {
     document.getElementById('opacityVal').textContent = `${e.target.value}%`;
     if (heatmapLayer) {
       heatmapLayer.setOpacity(state.opacity);
+    }
+  });
+
+  // Cluster k selector
+  document.getElementById('clusterKSelect').addEventListener('change', (e) => {
+    state.clusterK = parseInt(e.target.value);
+  });
+
+  // CTA Execute Clustering Button
+  document.getElementById('btnRunClustering').addEventListener('click', executeClustering);
+
+  // Cluster layer visibility toggle
+  document.getElementById('toggleClusterLayer').addEventListener('change', (e) => {
+    if (clusteringLayer) {
+      if (e.target.checked) {
+        map.addLayer(clusteringLayer);
+      } else {
+        map.removeLayer(clusteringLayer);
+      }
+    }
+  });
+
+  // Cluster opacity slider
+  document.getElementById('clusterOpacitySlider').addEventListener('input', (e) => {
+    state.clusterOpacity = parseInt(e.target.value) / 100;
+    document.getElementById('clusterOpacityVal').textContent = `${e.target.value}%`;
+    if (clusteringLayer) {
+      clusteringLayer.setOpacity(state.clusterOpacity);
     }
   });
 
@@ -279,6 +338,7 @@ async function executeSimilaritySearch() {
     year: state.year,
     threshold: state.threshold,
     top_n: state.topN,
+    label: state.currentRef.label,
     aoi: AOI_BOUNDS
   };
 
@@ -371,6 +431,167 @@ function renderResults(data) {
       <div class="result-score-pill">${(m.score * 100).toFixed(1)}%</div>
     </div>
   `).join('');
+}
+
+/**
+ * Execute Spatial K-Means Clustering
+ */
+async function executeClustering() {
+  showLoading(true, 'Training Server-Side K-Means Clusterer...', `Partitioning 64-D embedding space into ${state.clusterK} environmental biomes...`);
+
+  try {
+    const res = await fetch('/api/cluster', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year: state.year,
+        n_clusters: state.clusterK,
+        aoi: AOI_BOUNDS
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Clustering execution failed');
+    }
+
+    // 1. Remove previous clustering layer
+    if (clusteringLayer) {
+      map.removeLayer(clusteringLayer);
+    }
+
+    // 2. Add new clustering tile layer
+    clusteringLayer = L.tileLayer(data.tile_url, {
+      opacity: state.clusterOpacity,
+      maxZoom: 18
+    });
+
+    const toggle = document.getElementById('toggleClusterLayer');
+    if (toggle.checked) {
+      clusteringLayer.addTo(map);
+    }
+
+    // 3. Show controls and populate legend
+    document.getElementById('clusterControlsSection').style.display = 'flex';
+    const legendContainer = document.getElementById('clusterLegendList');
+    legendContainer.innerHTML = data.palette.map((color, idx) => `
+      <div class="cluster-legend-item">
+        <span class="cluster-color-badge" style="background: ${color}"></span>
+        <span>Cluster #${idx}</span>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    alert(`Clustering Error:\n${err.message}`);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/**
+ * Load and Render Bookmarks
+ */
+async function loadBookmarks() {
+  const container = document.getElementById('bookmarksList');
+  try {
+    const res = await fetch('/api/bookmarks');
+    const data = await res.json();
+    if (!data.success || !data.bookmarks.length) {
+      container.innerHTML = '<div class="placeholder-state"><p>No saved bookmarks found.</p></div>';
+      return;
+    }
+
+    container.innerHTML = data.bookmarks.map(b => `
+      <div class="bookmark-card" onclick="selectBookmark(${b.lon}, ${b.lat}, '${escapeQuotes(b.name)}')">
+        <div class="bookmark-header">
+          <span class="bookmark-name">${b.name}</span>
+          <span class="bookmark-category">${b.category || 'Site'}</span>
+          <button class="btn-delete-bookmark" onclick="event.stopPropagation(); removeBookmark(${b.id})">✕</button>
+        </div>
+        <p class="bookmark-desc">${b.description || `(${b.lat.toFixed(4)}, ${b.lon.toFixed(4)})`}</p>
+      </div>
+    `).join('');
+  } catch {
+    container.innerHTML = '<div class="placeholder-state"><p>Failed to load bookmarks.</p></div>';
+  }
+}
+
+/**
+ * Save Current Coordinates as Bookmark
+ */
+async function saveBookmark(name, lon, lat) {
+  try {
+    const res = await fetch('/api/bookmarks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, lon, lat, category: 'Custom' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(`Bookmark "${name}" saved!`);
+      loadBookmarks();
+    }
+  } catch (err) {
+    alert(`Failed to save bookmark: ${err.message}`);
+  }
+}
+
+/**
+ * Remove Bookmark
+ */
+window.removeBookmark = async function(id) {
+  if (!confirm('Delete this bookmark?')) return;
+  try {
+    const res = await fetch(`/api/bookmarks/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      loadBookmarks();
+    }
+  } catch (err) {
+    alert(`Failed to delete bookmark: ${err.message}`);
+  }
+};
+
+/**
+ * Select Bookmark
+ */
+window.selectBookmark = function(lon, lat, name) {
+  setReferencePoint(lon, lat, name);
+  // Switch to similarity tab
+  document.getElementById('tabSimilarity').click();
+};
+
+/**
+ * Load and Render Query History
+ */
+async function loadHistory() {
+  const container = document.getElementById('historyList');
+  try {
+    const res = await fetch('/api/history?limit=15');
+    const data = await res.json();
+    if (!data.success || !data.history.length) {
+      container.innerHTML = '<div class="placeholder-state"><p>No recent queries.</p></div>';
+      return;
+    }
+
+    container.innerHTML = data.history.map(h => `
+      <div class="history-card" onclick="selectBookmark(${h.lon}, ${h.lat}, '${escapeQuotes(h.label || 'History Item')}')">
+        <div class="history-header">
+          <strong style="font-size:0.8rem; color:var(--text-primary)">${h.label || 'Search'}</strong>
+          <span style="font-size:0.72rem; color:var(--accent-emerald)">${h.match_count} matches</span>
+        </div>
+        <div class="history-meta">
+          <span>Year: ${h.year} &bull; &tau; &ge; ${h.threshold} &bull; Top Score: ${h.top_score ? (h.top_score * 100).toFixed(1) + '%' : 'N/A'}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    container.innerHTML = '<div class="placeholder-state"><p>Failed to load history.</p></div>';
+  }
+}
+
+function escapeQuotes(str) {
+  return str.replace(/'/g, "\\'");
 }
 
 /**

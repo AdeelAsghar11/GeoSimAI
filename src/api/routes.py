@@ -12,8 +12,21 @@ from src.core.similarity import (
     get_similarity_map_id,
     get_top_matches,
 )
+from src.core.clustering import run_spatial_clustering
+from src.core.database import (
+    init_db,
+    log_query,
+    get_history,
+    add_bookmark,
+    get_bookmarks,
+    delete_bookmark,
+)
+
+# Initialize SQLite database
+init_db()
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+
 
 
 @api_bp.route("/health", methods=["GET"])
@@ -176,6 +189,27 @@ def run_similarity():
             top_n=top_n,
         )
 
+        # Log query to SQLite history
+        ref_label = data.get("label") or (
+            f"Point ({ref_info['coordinates'][1]:.4f}, {ref_info['coordinates'][0]:.4f})"
+            if "coordinates" in ref_info
+            else "Geometry Query"
+        )
+        top_score = matches[0]["score"] if matches else None
+        try:
+            log_query(
+                lon=float(ref_info.get("coordinates", [0, 0])[0]),
+                lat=float(ref_info.get("coordinates", [0, 0])[1]),
+                year=year,
+                threshold=threshold,
+                top_n=top_n,
+                match_count=len(matches),
+                top_score=top_score,
+                label=ref_label,
+            )
+        except Exception:
+            pass  # Non-blocking persistence
+
         return jsonify(
             {
                 "success": True,
@@ -190,3 +224,103 @@ def run_similarity():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route("/cluster", methods=["POST"])
+def run_clustering_endpoint():
+    """Execute unsupervised spatial k-means clustering across the AOI."""
+    data = request.get_json() or {}
+    year = int(data.get("year", Config.DEFAULT_YEAR))
+    n_clusters = int(data.get("n_clusters", 5))
+
+    aoi_data = data.get("aoi")
+    try:
+        initialize_earth_engine()
+
+        if aoi_data and isinstance(aoi_data, list) and len(aoi_data) == 4:
+            aoi = ee.Geometry.BBox(
+                aoi_data[0], aoi_data[1], aoi_data[2], aoi_data[3]
+            )
+        elif aoi_data and isinstance(aoi_data, dict):
+            aoi = ee.Geometry(aoi_data)
+        else:
+            b = Config.DEFAULT_AOI_BOUNDS
+            aoi = ee.Geometry.BBox(b[0], b[1], b[2], b[3])
+
+        image = load_embedding_image(year=year, aoi=aoi)
+        cluster_result = run_spatial_clustering(
+            image=image,
+            aoi=aoi,
+            n_clusters=n_clusters,
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "year": year,
+                "n_clusters": cluster_result["n_clusters"],
+                "palette": cluster_result["palette"],
+                "tile_url": cluster_result["tile_url"],
+            }
+        )
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route("/history", methods=["GET"])
+def get_query_history():
+    """Retrieve reverse-chronological query history."""
+    try:
+        limit = int(request.args.get("limit", 30))
+        history = get_history(limit=limit)
+        return jsonify({"success": True, "history": history})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route("/bookmarks", methods=["GET"])
+def list_bookmarks():
+    """Retrieve all bookmarked geographic sites."""
+    try:
+        bookmarks = get_bookmarks()
+        return jsonify({"success": True, "bookmarks": bookmarks})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route("/bookmarks", methods=["POST"])
+def create_bookmark():
+    """Create a new bookmark."""
+    data = request.get_json() or {}
+    name = data.get("name")
+    lon = data.get("lon")
+    lat = data.get("lat")
+
+    if not name or lon is None or lat is None:
+        return jsonify({"success": False, "error": "name, lon, and lat are required"}), 400
+
+    try:
+        category = data.get("category", "General")
+        description = data.get("description", "")
+        b_id = add_bookmark(
+            name=name,
+            lon=float(lon),
+            lat=float(lat),
+            category=category,
+            description=description,
+        )
+        return jsonify({"success": True, "id": b_id}), 201
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@api_bp.route("/bookmarks/<int:bookmark_id>", methods=["DELETE"])
+def remove_bookmark(bookmark_id: int):
+    """Delete a bookmark by ID."""
+    try:
+        deleted = delete_bookmark(bookmark_id)
+        return jsonify({"success": True, "deleted": deleted})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+

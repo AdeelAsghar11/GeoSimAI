@@ -1,0 +1,33 @@
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases & secrets
+geosim.db
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.local
+secrets/
+*.json
+
+# Git
+.git/
+.gitignore
+
+# Proposal / Scratch
+proposal/
+*.docx
+*.log

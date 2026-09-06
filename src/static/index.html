@@ -41,155 +41,243 @@
         </div>
       </header>
 
+      <!-- Mode Navigation Tabs -->
+      <nav class="mode-tabs">
+        <button class="tab-btn active" id="tabSimilarity" data-pane="paneSimilarity">
+          🎯 Similarity
+        </button>
+        <button class="tab-btn" id="tabClustering" data-pane="paneClustering">
+          🧩 Clustering
+        </button>
+        <button class="tab-btn" id="tabBookmarks" data-pane="paneBookmarks">
+          ⭐ Bookmarks
+        </button>
+      </nav>
+
       <div class="scroll-container">
-        <!-- Section: Presets & Validation Case Studies -->
-        <section class="panel-section">
-          <label class="section-label">Validation Case Studies</label>
-          <div class="preset-grid">
-            <button class="preset-btn" id="presetWater" data-case="B_WATER">
-              <span class="preset-icon">💧</span>
-              <div class="preset-info">
-                <strong>Rawal Lake</strong>
-                <small>Deep Freshwater</small>
+        <!-- ================= PANE 1: SIMILARITY SEARCH ================= -->
+        <div id="paneSimilarity" class="tab-pane active">
+          <!-- Section: Presets & Validation Case Studies -->
+          <section class="panel-section">
+            <label class="section-label">Validation Case Studies</label>
+            <div class="preset-grid">
+              <button class="preset-btn" id="presetWater" data-case="B_WATER">
+                <span class="preset-icon">💧</span>
+                <div class="preset-info">
+                  <strong>Rawal Lake</strong>
+                  <small>Deep Freshwater</small>
+                </div>
+              </button>
+              <button class="preset-btn active" id="presetVeg" data-case="C_VEGETATION">
+                <span class="preset-icon">🌲</span>
+                <div class="preset-info">
+                  <strong>Fatima Jinnah</strong>
+                  <small>Urban Greenery</small>
+                </div>
+              </button>
+              <button class="preset-btn" id="presetAgri" data-case="A_AGRICULTURE">
+                <span class="preset-icon">🌾</span>
+                <div class="preset-info">
+                  <strong>Potohar Plains</strong>
+                  <small>Cropland Parcel</small>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          <!-- Section: Selection Mode -->
+          <section class="panel-section">
+            <div class="section-header-flex">
+              <label class="section-label">Reference Location</label>
+              <button class="ghost-btn" id="btnPickPoint" title="Click anywhere on the map to pick reference">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Click Map
+              </button>
+            </div>
+            <div class="coord-display-card">
+              <div class="coord-item">
+                <span class="coord-tag">LAT</span>
+                <span class="coord-val" id="displayLat">33.704000</span>
               </div>
-            </button>
-            <button class="preset-btn active" id="presetVeg" data-case="C_VEGETATION">
-              <span class="preset-icon">🌲</span>
-              <div class="preset-info">
-                <strong>Fatima Jinnah</strong>
-                <small>Urban Greenery</small>
+              <div class="coord-item">
+                <span class="coord-tag">LON</span>
+                <span class="coord-val" id="displayLon">73.018000</span>
               </div>
-            </button>
-            <button class="preset-btn" id="presetAgri" data-case="A_AGRICULTURE">
-              <span class="preset-icon">🌾</span>
-              <div class="preset-info">
-                <strong>Potohar Plains</strong>
-                <small>Cropland Parcel</small>
+            </div>
+            <div class="section-header-flex">
+              <p class="helper-text" id="selectionStatus">Active: Fatima Jinnah Park Urban Canopy</p>
+              <button class="ghost-btn-sm" id="btnBookmarkCurrent" title="Bookmark current coordinates">⭐ Save</button>
+            </div>
+          </section>
+
+          <!-- Section: Query Parameters -->
+          <section class="panel-section">
+            <label class="section-label">Search Parameters</label>
+            
+            <div class="form-group">
+              <div class="form-row">
+                <label for="yearSelect">Annual Composite Year</label>
+                <select id="yearSelect" class="form-select">
+                  <option value="2024">2024</option>
+                  <option value="2023" selected>2023 (Benchmark)</option>
+                  <option value="2022">2022</option>
+                  <option value="2021">2021</option>
+                  <option value="2020">2020</option>
+                  <option value="2019">2019</option>
+                  <option value="2018">2018</option>
+                  <option value="2017">2017</option>
+                </select>
               </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-row flex-between">
+                <label for="thresholdSlider">Similarity Threshold (&tau;)</label>
+                <span class="badge" id="thresholdVal">&ge; 0.75</span>
+              </div>
+              <input type="range" id="thresholdSlider" class="form-range" min="0.50" max="0.98" step="0.01" value="0.75">
+              <div class="range-labels">
+                <span>0.50 (Broad)</span>
+                <span>0.98 (Strict)</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-row flex-between">
+                <label for="topNSelect">Ranked Candidates (Top N)</label>
+                <select id="topNSelect" class="form-select inline-select">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="btnRunSimilarity" class="cta-btn primary-pulse">
+              <span class="btn-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              </span>
+              <span class="btn-text">Execute Similarity Search</span>
             </button>
-          </div>
-        </section>
+          </section>
 
-        <!-- Section: Selection Mode -->
-        <section class="panel-section">
-          <div class="section-header-flex">
-            <label class="section-label">Reference Location</label>
-            <button class="ghost-btn" id="btnPickPoint" title="Click anywhere on the map to pick reference">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-              Click Map
+          <!-- Section: Layer & Visualization Controls -->
+          <section class="panel-section" id="layerControlSection" style="display: none;">
+            <div class="section-header-flex">
+              <label class="section-label">Heatmap Overlay</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleHeatmap" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <div class="form-row flex-between">
+                <small>Opacity</small>
+                <small id="opacityVal">85%</small>
+              </div>
+              <input type="range" id="opacitySlider" class="form-range" min="0" max="100" value="85">
+            </div>
+
+            <!-- Color Ramp -->
+            <div class="legend-box">
+              <div class="legend-labels">
+                <span>Low (<span id="legendMin">0.75</span>)</span>
+                <span>High (1.00)</span>
+              </div>
+              <div class="legend-gradient"></div>
+            </div>
+          </section>
+
+          <!-- Section: Ranked Results List -->
+          <section class="panel-section" id="resultsSection">
+            <div class="section-header-flex">
+              <label class="section-label">Ranked Matches</label>
+              <button id="btnExportJson" class="ghost-btn-sm" style="display: none;" title="Download JSON results">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Export
+              </button>
+            </div>
+
+            <div id="resultsList" class="results-list">
+              <div class="placeholder-state">
+                <p>Select a reference site and execute similarity search to see ranked geographic analogs.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ================= PANE 2: UNSUPERVISED CLUSTERING ================= -->
+        <div id="paneClustering" class="tab-pane" style="display: none;">
+          <section class="panel-section">
+            <label class="section-label">Spatial Pattern Clustering (K-Means)</label>
+            <p class="helper-text">Partitions the 1,720 km² AOI into <em>k</em> natural land-cover and spectral-semantic clusters over the unified 64-D embedding space without labeled training data.</p>
+            
+            <div class="form-group">
+              <div class="form-row flex-between">
+                <label for="clusterKSelect">Number of Clusters (k)</label>
+                <select id="clusterKSelect" class="form-select inline-select">
+                  <option value="3">3 biomes</option>
+                  <option value="4">4 biomes</option>
+                  <option value="5" selected>5 biomes</option>
+                  <option value="6">6 biomes</option>
+                  <option value="8">8 biomes</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="btnRunClustering" class="cta-btn secondary-btn">
+              <span class="btn-icon">🧩</span>
+              <span class="btn-text">Partition Landscape</span>
             </button>
-          </div>
-          <div class="coord-display-card">
-            <div class="coord-item">
-              <span class="coord-tag">LAT</span>
-              <span class="coord-val" id="displayLat">33.704000</span>
-            </div>
-            <div class="coord-item">
-              <span class="coord-tag">LON</span>
-              <span class="coord-val" id="displayLon">73.018000</span>
-            </div>
-          </div>
-          <p class="helper-text" id="selectionStatus">Active: Fatima Jinnah Park Urban Canopy</p>
-        </section>
+          </section>
 
-        <!-- Section: Query Parameters -->
-        <section class="panel-section">
-          <label class="section-label">Search Parameters</label>
-          
-          <div class="form-group">
-            <div class="form-row">
-              <label for="yearSelect">Annual Composite Year</label>
-              <select id="yearSelect" class="form-select">
-                <option value="2024">2024</option>
-                <option value="2023" selected>2023 (Benchmark)</option>
-                <option value="2022">2022</option>
-                <option value="2021">2021</option>
-                <option value="2020">2020</option>
-                <option value="2019">2019</option>
-                <option value="2018">2018</option>
-                <option value="2017">2017</option>
-              </select>
+          <section class="panel-section" id="clusterControlsSection" style="display: none;">
+            <div class="section-header-flex">
+              <label class="section-label">Cluster Layer Controls</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggleClusterLayer" checked>
+                <span class="slider round"></span>
+              </label>
             </div>
-          </div>
 
-          <div class="form-group">
-            <div class="form-row flex-between">
-              <label for="thresholdSlider">Similarity Threshold (&tau;)</label>
-              <span class="badge" id="thresholdVal">&ge; 0.75</span>
+            <div class="form-group">
+              <div class="form-row flex-between">
+                <small>Opacity</small>
+                <small id="clusterOpacityVal">75%</small>
+              </div>
+              <input type="range" id="clusterOpacitySlider" class="form-range" min="0" max="100" value="75">
             </div>
-            <input type="range" id="thresholdSlider" class="form-range" min="0.50" max="0.98" step="0.01" value="0.75">
-            <div class="range-labels">
-              <span>0.50 (Broad)</span>
-              <span>0.98 (Strict)</span>
+
+            <!-- Dynamic Cluster Legend -->
+            <label class="section-label">Cluster Legend</label>
+            <div id="clusterLegendList" class="cluster-legend-grid"></div>
+          </section>
+        </div>
+
+        <!-- ================= PANE 3: BOOKMARKS & HISTORY ================= -->
+        <div id="paneBookmarks" class="tab-pane" style="display: none;">
+          <!-- Bookmarked Sites -->
+          <section class="panel-section">
+            <div class="section-header-flex">
+              <label class="section-label">Saved Bookmarks</label>
             </div>
-          </div>
-
-          <div class="form-group">
-            <div class="form-row flex-between">
-              <label for="topNSelect">Ranked Candidates (Top N)</label>
-              <select id="topNSelect" class="form-select inline-select">
-                <option value="5">5</option>
-                <option value="10" selected>10</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-              </select>
+            <div id="bookmarksList" class="bookmarks-list">
+              <div class="placeholder-state"><p>Loading bookmarks...</p></div>
             </div>
-          </div>
+          </section>
 
-          <button id="btnRunSimilarity" class="cta-btn primary-pulse">
-            <span class="btn-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-            </span>
-            <span class="btn-text">Execute Similarity Search</span>
-          </button>
-        </section>
-
-        <!-- Section: Layer & Visualization Controls -->
-        <section class="panel-section" id="layerControlSection" style="display: none;">
-          <div class="section-header-flex">
-            <label class="section-label">Heatmap Overlay</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="toggleHeatmap" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-
-          <div class="form-group">
-            <div class="form-row flex-between">
-              <small>Opacity</small>
-              <small id="opacityVal">85%</small>
+          <!-- Query History -->
+          <section class="panel-section">
+            <label class="section-label">Recent Query History</label>
+            <div id="historyList" class="history-list">
+              <div class="placeholder-state"><p>No queries executed yet.</p></div>
             </div>
-            <input type="range" id="opacitySlider" class="form-range" min="0" max="100" value="85">
-          </div>
-
-          <!-- Color Ramp -->
-          <div class="legend-box">
-            <div class="legend-labels">
-              <span>Low (<span id="legendMin">0.75</span>)</span>
-              <span>High (1.00)</span>
-            </div>
-            <div class="legend-gradient"></div>
-          </div>
-        </section>
-
-        <!-- Section: Ranked Results List -->
-        <section class="panel-section" id="resultsSection">
-          <div class="section-header-flex">
-            <label class="section-label">Ranked Matches</label>
-            <button id="btnExportJson" class="ghost-btn-sm" style="display: none;" title="Download JSON results">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              Export
-            </button>
-          </div>
-
-          <div id="resultsList" class="results-list">
-            <div class="placeholder-state">
-              <p>Select a reference site and execute similarity search to see ranked geographic analogs.</p>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
 
       <!-- Footer Info -->

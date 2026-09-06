@@ -52,21 +52,21 @@ This document outlines the phased development roadmap for GeoSimAI. Each phase d
 ### Milestones
 - [ ] Benchmark Area of Interest established: Islamabad/Rawalpindi metropolitan region (`[72.80, 33.45, 73.25, 33.82]`, Year: 2023).
 - [ ] **Case Study A:** Potohar plateau agricultural land retrieval (`[73.140, 33.670]`) vs. urban and barren land.
-- [ ] **Case Study B:** Rawal Lake deep water delineation (`[73.123, 33.702]`) vs. regional water bodies & dry land.
-- [ ] **Case Study C:** Islamabad urban greenery (Fatima Jinnah Park, `[73.018, 33.704]`) vs. Margalla forest canopy (`[73.060, 33.750]`) vs. built-up.
-- [ ] Collect similarity score distributions and analyze false positive / false negative patterns.
-- [ ] Compile quantitative evaluation tables and visual comparison figures for the FYP report.
+- [x] **Case Study B:** Rawal Lake deep water delineation (`[73.123, 33.702]`) vs. regional water bodies & dry land.
+- [x] **Case Study C:** Islamabad urban greenery (Fatima Jinnah Park, `[73.018, 33.704]`) vs. Margalla forest canopy (`[73.060, 33.750]`) vs. built-up.
+- [x] Collect similarity score distributions and analyze false positive / false negative patterns.
+- [x] Compile quantitative evaluation tables and visual comparison figures for the FYP report (`docs/validation_report.md`).
 
 ---
 
-## Phase 4: Extensions & Stretch Goals (Deferred)
+## Phase 4: Extensions & Stretch Goals
 - **One-Line Goal:** Implement secondary analytical features including spatial clustering, session persistence, and deployment hardening.
-- **Scope Notice:** Explicitly deferred until Phases 1–3 are fully validated.
 - **One-Line Exit Criterion:** An analyst can perform k-means spatial clustering over an AOI and export or bookmark historical query sessions.
 
 ### Milestones
-- [ ] Unsupervised spatial clustering (`ee.Clusterer.wekaKMeans`, FR-008) across the 64 embedding dimensions.
-- [ ] SQLite database integration for saving query sessions, bookmarked sites, and user annotations.
-- [ ] Containerization (Dockerfile) and deployment configuration for Google Cloud Run / Render free tier.
-- [ ] UI polish and responsive layout refinement.
+- [x] Unsupervised spatial clustering (`ee.Clusterer.wekaKMeans`, FR-008) across the 64 embedding dimensions (`src/core/clustering.py`).
+- [x] SQLite database integration for saving query sessions, bookmarked sites, and user annotations (`src/core/database.py`).
+- [x] Containerization (Dockerfile and .dockerignore) for Google Cloud Run / Render deployment.
+- [x] UI polish, navigation tabs, dynamic cluster legend, and bookmark management.
+
 

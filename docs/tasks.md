@@ -58,9 +58,10 @@ Track active, completed, and pending tasks. Check items off immediately when com
 ---
 
 ## Phase 4: Extensions & Stretch Goals
-- [ ] Implement unsupervised spatial clustering (`ee.Clusterer`) over the AOI embedding bands (`src/core/clustering.py`).
-- [ ] Add clustering layer toggle and cluster legend to frontend map interface.
-- [ ] Design lightweight SQLite database schema for saved queries and bookmarked reference points.
-- [ ] Implement session bookmarking endpoints in Flask backend.
-- [ ] Create `Dockerfile` and verify deployment on Google Cloud Run or Render free tier.
-- [ ] Finalize code cleanup, documentation refresh, and presentation demo packaging.
+- [x] Implement unsupervised spatial clustering (`ee.Clusterer.wekaKMeans`) over the AOI embedding bands (`src/core/clustering.py`).
+- [x] Add clustering layer toggle, opacity slider, and dynamic color legend to frontend map interface.
+- [x] Design lightweight SQLite database schema for saved queries and bookmarked reference points (`src/core/database.py`).
+- [x] Implement session history and bookmarking endpoints in Flask backend (`src/api/routes.py`).
+- [x] Create `Dockerfile` and `.dockerignore` for containerized deployment.
+- [x] Finalize code cleanup, documentation refresh, and presentation demo packaging.
+
