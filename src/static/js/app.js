@@ -79,14 +79,15 @@ function initMap() {
     }
   );
 
-  // Dark Base Layer (CartoDB Dark Matter)
+  // Dark Base Layer (Esri World Dark Gray Canvas — No API key needed)
   baseLayers.dark = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     {
-      attribution: '&copy; OpenStreetMap, &copy; CartoDB',
-      maxZoom: 19
+      attribution: 'Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
+      maxZoom: 16
     }
   );
+
 
   // Default to satellite
   currentBaseLayer = baseLayers.satellite;
