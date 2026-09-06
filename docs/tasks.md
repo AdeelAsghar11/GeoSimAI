@@ -48,11 +48,12 @@ Track active, completed, and pending tasks. Check items off immediately when com
 ---
 
 ## Phase 3: Validation & Empirical Evaluation
-- [ ] Select 2–3 concrete case study locations and years based on human supervisor confirmation.
-- [ ] Execute reference queries and record similarity score distributions across diverse land covers.
-- [ ] Quantify score separation between matching biomes and non-matching biomes.
-- [ ] Generate comparative side-by-side maps (satellite basemap vs. similarity heatmap).
-- [ ] Document false-positive and false-negative edge cases and write up findings in a validation report.
+- [x] Select 2–3 concrete case study locations and years based on human supervisor confirmation (`src/config.py`).
+- [x] Execute reference queries and record similarity score distributions across diverse land covers (`src/core/evaluation.py`).
+- [x] Quantify score separation between matching biomes and non-matching biomes (`src/core/evaluation.py`).
+- [x] Generate interactive dual-basemap overlays in web UI (satellite basemap vs. similarity heatmap).
+- [x] Document false-positive, false-negative edge cases and score distributions in a formal validation report (`docs/validation_report.md`).
+
 
 ---
 
