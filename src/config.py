@@ -30,39 +30,50 @@ class Config:
     MAX_SEARCH_SAMPLES: int = 500  # Max candidate points for top-N ranking
     DEFAULT_TOP_N: int = 20
 
-    # Benchmark Study AOI: Islamabad / Rawalpindi Twin Cities
+    # Optical Sentinel-2 Settings for Visual Validation & Indices
+    OPTICAL_DATASET_ID: str = os.getenv(
+        "OPTICAL_DATASET_ID", "COPERNICUS/S2_SR_HARMONIZED"
+    )
+    OPTICAL_MAX_CLOUD_PERCENT: float = 20.0
+    INDEX_SIMILARITY_THRESHOLD: float = 0.12  # Threshold for NDVI, NDBI, NDMI difference
+
+    # Benchmark Study AOI: Muzaffarabad Valley (Azad Kashmir)
     # Bounds: [min_lon, min_lat, max_lon, max_lat] (WGS84)
-    DEFAULT_AOI_BOUNDS: List[float] = [72.80, 33.45, 73.25, 33.82]
+    # Encompasses the Neelum-Jhelum confluence, urban valley, and Pir Chinasi ridgeline (~183 km²)
+    DEFAULT_AOI_BOUNDS: List[float] = [73.42, 34.32, 73.60, 34.42]
     DEFAULT_AOI_GEOJSON: dict = {
         "type": "Polygon",
         "coordinates": [[
-            [72.80, 33.45],
-            [73.25, 33.45],
-            [73.25, 33.82],
-            [72.80, 33.82],
-            [72.80, 33.45],
+            [73.42, 34.32],
+            [73.60, 34.32],
+            [73.60, 34.42],
+            [73.42, 34.42],
+            [73.42, 34.32],
         ]],
     }
 
     # Validation Case Study Reference Points [lon, lat]
     CASE_STUDIES = {
-        "A_AGRICULTURE": {
-            "name": "Potohar Plateau Cropland (Chak Shahzad)",
-            "coords": [73.140, 33.670],
+        "A_RIVER": {
+            "name": "Domel River Confluence",
+            "type": "River confluence",
+            "coords": [73.465, 34.383],
             "year": 2023,
-            "description": "Rainfed agricultural parcel vs. urban/barren land",
+            "description": "Confluence of Neelum and Jhelum rivers vs. surrounding terrain",
         },
-        "B_WATER": {
-            "name": "Rawal Lake Deep Water",
-            "coords": [73.123, 33.702],
+        "B_URBAN": {
+            "name": "Muzaffarabad City Core",
+            "type": "Urban core",
+            "coords": [73.472, 34.358],
             "year": 2023,
-            "description": "Deep freshwater reservoir vs. dry land/vegetation",
+            "description": "Dense valley urban fabric and commercial core",
         },
-        "C_VEGETATION": {
-            "name": "Fatima Jinnah Park (Islamabad Urban Greenery)",
-            "coords": [73.018, 33.704],
+        "C_FOREST": {
+            "name": "Pir Chinasi Alpine Forest",
+            "type": "Alpine forest",
+            "coords": [73.550, 34.389],
             "year": 2023,
-            "description": "Urban park canopy vs. Margalla forest reserve and built-up grid",
+            "description": "High-altitude coniferous forest and green ridgeline plateau (~2,900m)",
         },
     }
 

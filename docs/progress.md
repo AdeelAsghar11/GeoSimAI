@@ -2,6 +2,36 @@
 
 Reverse-chronological log of engineering and research sessions. Add new sessions at the top; never delete historical records.
 
+## 2026-09-08 (Session 4)
+
+**Did:**
+- Migrated demo Area of Interest from Islamabad-Rawalpindi to Muzaffarabad Valley, Azad Kashmir (`[73.42, 34.32, 73.60, 34.42]`, ~183 km²).
+- Configured 3 new validation case studies in [src/config.py](file:///d:/GeoSimAI/src/config.py):
+  - **Domel River Confluence** (`[73.465, 34.383]`, ~34.383°N, 73.465°E, "River confluence") as new active default.
+  - **Muzaffarabad City Core** (`[73.472, 34.358]`, ~34.358°N, 73.472°E, "Urban core").
+  - **Pir Chinasi Alpine Forest** (`[73.550, 34.389]`, ~34.389°N, 73.550°E, "Alpine forest").
+- Created Sentinel-2 optical verification engine in [src/core/optical.py](file:///d:/GeoSimAI/src/core/optical.py):
+  - Annual median composite from `COPERNICUS/S2_SR_HARMONIZED` (cloud cover < 20%).
+  - In-memory thread-safe cached thumbnail generator with parallel retrieval (`batch_get_thumbnail_urls`).
+  - Physical spectral indices extraction: NDVI (vegetation), NDBI (built-up), and NDMI (canopy moisture).
+  - Deterministic rule-based sentence composer (`generate_similarity_description`) comparing optical index deltas against a $\le 0.12$ threshold without violating `AGENTS.md` Principle #1.
+- Updated REST API in [src/api/routes.py](file:///d:/GeoSimAI/src/api/routes.py):
+  - Enriched `/api/similarity` response with reference optical crop, candidate optical crops, and plain-language descriptions.
+  - Added dedicated `/api/thumbnail` endpoint.
+- Revamped UI in [src/static/index.html](file:///d:/GeoSimAI/src/static/index.html), [src/static/css/style.css](file:///d:/GeoSimAI/src/static/css/style.css), and [src/static/js/app.js](file:///d:/GeoSimAI/src/static/js/app.js):
+  - Dynamic cycling loading copy during search: *"Fetching 2023 embeddings..."*, *"Comparing 64 dimensions..."*, *"Extracting optical spectral indices..."*, *"Ranking candidates..."*.
+  - Rendered side-by-side Sentinel-2 satellite crops (Reference vs. Match) and plain-language descriptions on each ranked candidate card.
+  - Completely removed all mentions of Islamabad and Rawalpindi across UI and documentation.
+- Updated database default bookmarks in [src/core/database.py](file:///d:/GeoSimAI/src/core/database.py) and empirical sites in [src/core/evaluation.py](file:///d:/GeoSimAI/src/core/evaluation.py).
+- Created [tests/test_optical.py](file:///d:/GeoSimAI/tests/test_optical.py) and ran all 23 unit and integration tests (100% passing).
+- Updated living documentation: [docs/PRD.md](file:///d:/GeoSimAI/docs/PRD.md), [docs/TRD.md](file:///d:/GeoSimAI/docs/TRD.md), [docs/decisions.md](file:///d:/GeoSimAI/docs/decisions.md), [docs/tasks.md](file:///d:/GeoSimAI/docs/tasks.md).
+
+**Status:**
+- Muzaffarabad AOI migration and both optical verification features (side-by-side satellite crops & plain-language descriptions) are fully implemented, verified end-to-end with live Earth Engine integration, and passing all tests.
+
+**Blockers:**
+- None.
+
 ---
 
 ## 2026-09-07 (Session 3)

@@ -1,7 +1,7 @@
 """Empirical validation and quantitative evaluation framework for GeoSimAI.
 
 Executes ground-truth benchmark queries across diverse land covers
-in the Islamabad-Rawalpindi Area of Interest (AOI) to evaluate:
+in the Muzaffarabad Valley Area of Interest (AOI) to evaluate:
 1. Within-class similarity fidelity (homogeneous surface matching)
 2. Cross-class bimodal score separation (discriminative capacity)
 3. False-positive and edge-case boundary dynamics.
@@ -18,38 +18,36 @@ from src.core.client import initialize_earth_engine, load_embedding_image
 from src.core.extraction import extract_point_embedding
 
 # Ground-truth reference points classified by verified satellite land-cover
+# Ground-truth reference points classified by verified satellite land-cover
 GROUND_TRUTH_SITES: Dict[str, List[Dict[str, Any]]] = {
     "WATER": [
-        {"name": "Rawal Lake Center", "coords": [73.1230, 33.7020], "biome": "Freshwater Lake"},
-        {"name": "Rawal Lake East Bay", "coords": [73.1312, 33.7007], "biome": "Freshwater Lake"},
-        {"name": "Khanpur Dam Reservoir", "coords": [72.9407, 33.8041], "biome": "Water Reservoir"},
-        {"name": "Rama / Misriot Reservoir", "coords": [72.8158, 33.5648], "biome": "Water Reservoir"},
+        {"name": "Domel River Confluence", "coords": [73.4650, 34.3830], "biome": "River Confluence"},
+        {"name": "Neelum River Upstream", "coords": [73.4750, 34.4000], "biome": "Mountain Riverbed"},
+        {"name": "Jhelum River South", "coords": [73.4550, 34.3400], "biome": "River Channel"},
     ],
     "URBAN_GREENERY": [
-        {"name": "Fatima Jinnah Park (F-9)", "coords": [73.0180, 33.7040], "biome": "Managed Urban Park"},
-        {"name": "Shakarparian Botanical Park", "coords": [73.0750, 33.6882], "biome": "Managed Urban Park"},
-        {"name": "Rose & Jasmine Garden", "coords": [73.0804, 33.6782], "biome": "Urban Floral Canopy"},
-        {"name": "Lake View Arboretum", "coords": [73.1420, 33.6839], "biome": "Riparian Parkland"},
+        {"name": "Subedar Ground & Park", "coords": [73.4700, 34.3650], "biome": "Valley Urban Park"},
+        {"name": "AJK University Green Grounds", "coords": [73.4620, 34.3580], "biome": "Campus Parkland"},
+        {"name": "Neelum Riverside Park", "coords": [73.4680, 34.3780], "biome": "Riparian Green Corridor"},
     ],
     "NATURAL_FOREST": [
-        {"name": "Margalla Hills Monal Ridge", "coords": [73.0600, 33.7500], "biome": "Sub-Himalayan Forest"},
-        {"name": "Margalla National Park North", "coords": [72.9800, 33.7650], "biome": "Sub-Himalayan Forest"},
-        {"name": "Daman-e-Koh Escarpment", "coords": [73.0550, 33.7400], "biome": "Dense Natural Canopy"},
+        {"name": "Pir Chinasi Alpine Forest", "coords": [73.5500, 34.3890], "biome": "Coniferous Alpine Forest"},
+        {"name": "Saran Mountain Forest", "coords": [73.5300, 34.4100], "biome": "Montane Pine Canopy"},
+        {"name": "Kohala Ridge Forest", "coords": [73.5100, 34.3350], "biome": "Dense Slope Canopy"},
     ],
     "AGRICULTURE": [
-        {"name": "Chak Shahzad Research Farms", "coords": [73.1400, 33.6700], "biome": "Irrigated/Rainfed Cropland"},
-        {"name": "Tarlai Kalan Farmland", "coords": [73.1550, 33.6300], "biome": "Potohar Agricultural Parcel"},
-        {"name": "Rawat Southern Cropland", "coords": [73.1850, 33.5200], "biome": "Rainfed Wheat/Maize Plain"},
+        {"name": "Lower Plate Terraced Fields", "coords": [73.4800, 34.3700], "biome": "Terraced Hillside Cropland"},
+        {"name": "Chehla Farmland Parcel", "coords": [73.4850, 34.3900], "biome": "Valley Agricultural Parcel"},
+        {"name": "Ambore Terraced Plots", "coords": [73.4500, 34.3350], "biome": "Terraced Montane Cropland"},
     ],
     "DENSE_URBAN": [
-        {"name": "Rawalpindi Raja Bazaar", "coords": [73.0550, 33.6000], "biome": "Dense Organic Built-Up"},
-        {"name": "Rawalpindi Saddar / Cantt", "coords": [73.0600, 33.5900], "biome": "Commercial Grid Built-Up"},
-        {"name": "Islamabad Blue Area Core", "coords": [73.0650, 33.7120], "biome": "High-Rise Commercial"},
-        {"name": "Islamabad I-9 Industrial Zone", "coords": [73.0500, 33.6600], "biome": "Industrial Paved Fabric"},
+        {"name": "Muzaffarabad Main Bazaar", "coords": [73.4720, 34.3580], "biome": "Dense Valley Commercial Fabric"},
+        {"name": "CMH Chowk Fabric", "coords": [73.4680, 34.3620], "biome": "Paved Urban Civic Grid"},
+        {"name": "Madina Market Commercial Zone", "coords": [73.4740, 34.3600], "biome": "Dense Built-Up Core"},
     ],
     "BARREN_SOIL": [
-        {"name": "Margalla Limestone Quarry", "coords": [72.8250, 33.7250], "biome": "Exposed Rock / Quarry"},
-        {"name": "Fateh Jang Border Barren Soil", "coords": [72.8500, 33.5800], "biome": "Dry Unvegetated Soil"},
+        {"name": "Neelum Gorge Rocky Escarpment", "coords": [73.4900, 34.4150], "biome": "Exposed Montane Rock"},
+        {"name": "Muzaffarabad Fault Line Scree", "coords": [73.4450, 34.3650], "biome": "Barren Scree Slope"},
     ],
 }
 
@@ -58,7 +56,7 @@ def run_empirical_validation(year: int = Config.DEFAULT_YEAR) -> Dict[str, Any]:
     """Execute validation experiments across all benchmark case studies."""
     print("=" * 75)
     print("GeoSimAI — Phase 3 Empirical Validation & Quantitative Evaluation")
-    print(f"Target Year: {year} | AOI: Islamabad-Rawalpindi (1,720 km²)")
+    print(f"Target Year: {year} | AOI: Muzaffarabad Valley (~183 km²)")
     print("=" * 75)
 
     initialize_earth_engine()
@@ -157,16 +155,16 @@ def generate_markdown_report(results: Dict[str, Any], output_path: str = "docs/v
         "**Evaluator:** GeoSimAI Automated Benchmark Engine  ",
         "**Project:** BS Final Year Project, Supervised by Dr. Abdul Majid  ",
         "**Dataset:** `GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL` (Google DeepMind AlphaEarth Foundations)  ",
-        "**Benchmark Study Area:** Islamabad-Rawalpindi Twin Cities AOI (`[72.80, 33.45, 73.25, 33.82]`, ~1,720 km²)  ",
+        "**Benchmark Study Area:** Muzaffarabad Valley AOI (`[73.42, 34.32, 73.60, 34.42]`, ~183 km²)  ",
         "**Benchmark Calendar Year:** 2023  ",
         "",
         "---",
         "",
         "## 1. Executive Summary",
         "",
-        "This report provides formal quantitative evaluation of **GeoSimAI**'s in-engine vector similarity retrieval pipeline. Using 20 verified ground-truth locations across 6 distinct land-cover biomes (Freshwater Reservoirs, Managed Urban Greenery, Sub-Himalayan Natural Forest, Rainfed Agricultural Cropland, Dense Urban Built-up Fabric, and Barren/Exposed Soil), we evaluate:",
-        "1. **Within-Class Similarity ($\mu_{\\text{within}}$):** Whether geographic analogs sharing identical biophysical features achieve high similarity ($>0.85$).",
-        "2. **Cross-Class Separation Margin ($\Delta = \mu_{\\text{within}} - \mu_{\\text{discordant}}$):** The mathematical distance between matching surface classes and non-matching classes.",
+        "This report provides formal quantitative evaluation of **GeoSimAI**'s in-engine vector similarity retrieval pipeline. Using verified ground-truth locations across 6 distinct land-cover biomes (Freshwater Confluences, Managed Urban Greenery, Montane Natural Forest, Terraced Agricultural Cropland, Dense Urban Fabric, and Barren/Exposed Scree), we evaluate:",
+        r"1. **Within-Class Similarity ($\mu_{\text{within}}$):** Whether geographic analogs sharing identical biophysical features achieve high similarity ($>0.85$).",
+        r"2. **Cross-Class Separation Margin ($\Delta = \mu_{\text{within}} - \mu_{\text{discordant}}$):** The mathematical distance between matching surface classes and non-matching classes.",
         "3. **Biophysical Nuance & Boundary Discrimination:** How effectively the unified 64-dimensional latent embedding space separates subtle sub-categories (e.g. managed urban grass/canopy vs. wild mountain forest canopy) without manual index decomposition.",
         "",
         "---",

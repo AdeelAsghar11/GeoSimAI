@@ -57,10 +57,10 @@ def init_db(db_path: Optional[str] = None) -> None:
     cursor.execute("SELECT COUNT(*) FROM bookmarks")
     if cursor.fetchone()[0] == 0:
         seed_data = [
-            ("Rawal Lake Center", "Water", 73.1230, 33.7020, "Deep freshwater reservoir benchmark site"),
-            ("Fatima Jinnah Park", "Vegetation", 73.0180, 33.7040, "Managed urban greenery and park canopy"),
-            ("Chak Shahzad Farms", "Agriculture", 73.1400, 33.6700, "Potohar plateau agricultural research parcels"),
-            ("Margalla Monal Ridge", "Forest", 73.0600, 33.7500, "Dense sub-Himalayan natural forest reserve"),
+            ("Domel Confluence", "River", 73.4650, 34.3830, "Confluence of Neelum and Jhelum rivers"),
+            ("Muzaffarabad City Core", "Urban", 73.4720, 34.3580, "Central urban fabric and commercial core"),
+            ("Pir Chinasi Plateau", "Forest", 73.5500, 34.3890, "High-altitude alpine forest and green plateau"),
+            ("Neelum Valley Slope", "Vegetation", 73.4800, 34.3950, "Terraced valley greenery and montane canopy"),
         ]
         cursor.executemany(
             "INSERT INTO bookmarks (name, category, lon, lat, description) VALUES (?, ?, ?, ?, ?)",

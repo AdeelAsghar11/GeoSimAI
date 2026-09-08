@@ -68,3 +68,36 @@ Lightweight Architectural Decision Records (ADRs). Document each non-trivial tec
 - **Why:** Both platforms support standard Docker containerization or Python runtime, include free tier allocations, and crucially permit unrestricted outbound HTTPS calls to Google Earth Engine APIs (`*.googleapis.com`).
 - **Alternatives considered:**
   - *PythonAnywhere:* PythonAnywhere's free tier restricts outbound HTTP traffic to an explicit whitelist of domains. Unless Google Earth Engine API endpoints are verified on the whitelist, it risks network failures during server initialization.
+
+---
+
+## 2026-09-08: Relocation of Benchmark Demo AOI to Muzaffarabad
+
+- **Decision:** Shift canonical demonstration and evaluation Area of Interest from Islamabad-Rawalpindi to Muzaffarabad, Azad Kashmir (`[73.42, 34.32, 73.60, 34.42]`, ~183 km²).
+- **Why:** Muzaffarabad sits at the confluence of the Jhelum and Neelum rivers in a steep valley basin receiving ~1,800 mm/year of precipitation. The mountainous topography produces steep microclimate and land-cover gradients (deep river confluence, dense river-basin urban grid, terraced slopes, and high-altitude alpine coniferous forests at Pir Chinasi ~2,900m) over a much smaller spatial footprint (183 km² vs. 1,720 km²). This enhances computational speed within EECU limits while offering rich, hydrologically authentic similarity matching.
+- **Alternatives considered:**
+  - *Retaining Islamabad-Rawalpindi:* Valid plains/foothills basin, but spans 1,720 km² with wider sampling overhead and less extreme topographical diversity per unit area.
+  - *Swat or Gilgit Valley:* High land cover diversity, but lower urban density and less readily accessible ground-truth reference points.
+
+---
+
+## 2026-09-08: Sourcing Visual Verification Crops from Sentinel-2 Rather than Embeddings
+
+- **Decision:** Generate side-by-side optical satellite thumbnails from `COPERNICUS/S2_SR_HARMONIZED` (Sentinel-2 Harmonized Surface Reflectance) rather than attempting to render the AlphaEarth embedding directly.
+- **Why:** The AlphaEarth Foundations embedding (`GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL`) consists of 64 learned latent dimensions (`A00`–`A63`). They are dimensionless mathematical vectors, not photographic or multispectral bands. Per `AGENTS.md` Principle #1, embedding dimensions must never be treated as physical pseudo-bands. Sentinel-2 true-color optical imagery (B4, B3, B2) provides genuine, verifiable photographic crops that human evaluators can cross-check with their own eyes.
+- **Alternatives considered:**
+  - *PCA/t-SNE RGB Projection of Latent Bands:* Creates aesthetically interesting false-color maps, but produces non-intuitive colors that do not resemble optical reality and risks confusing human judges.
+  - *Landsat 8/9:* Offers true-color imagery, but at 30m resolution compared to Sentinel-2's sharper 10m native spatial resolution.
+
+---
+
+## 2026-09-08: Deterministic Rule-Based Plain-Language Descriptions Over LLM Generation
+
+- **Decision:** Generate one-line plain-language similarity descriptions ("Both areas exhibit comparable vegetation density and similar built-up density") using deterministic thresholds over independent Sentinel-2 optical spectral indices (NDVI, NDBI, NDMI) rather than an LLM text generator.
+- **Why:** 
+  1. *Scientific Integrity:* Asking an LLM to narrate AlphaEarth embeddings directly violates Principle #1 by prompting hallucinated physical claims from latent dimensions. Computing real optical indices provides genuine, verifiable physical backing.
+  2. *Deterministic Reliability:* Rule-based composition never hallucinates, never fails at demo time due to LLM provider outages, and incurs zero API cost and zero inference latency.
+  3. *Verification:* An evaluator can inspect the exact delta values ($\Delta \text{NDVI} \le 0.12$) confirming why a trait was designated as similar.
+- **Alternatives considered:**
+  - *LLM Prompt Over Embedding Vectors:* Hallucinates physical variables from abstract latent numbers; violates core project principles.
+  - *Small LLM Summarizer Over Computed Optical Indices:* Feasible as a future enhancement, but adds API dependencies and non-zero latency without altering the underlying physical facts.

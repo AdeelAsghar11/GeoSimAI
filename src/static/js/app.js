@@ -4,30 +4,30 @@
  */
 
 // Benchmark AOI bounds [min_lon, min_lat, max_lon, max_lat]
-const AOI_BOUNDS = [72.80, 33.45, 73.25, 33.82];
+const AOI_BOUNDS = [73.42, 34.32, 73.60, 34.42];
 
 // Preset Validation Case Studies
 const CASE_STUDIES = {
-  B_WATER: {
-    name: 'Rawal Lake Deep Water',
-    coords: [73.123, 33.702],
-    desc: 'Deep freshwater reservoir vs. dry land/vegetation'
+  A_RIVER: {
+    name: 'Domel River Confluence',
+    coords: [73.465, 34.383],
+    desc: 'Confluence of Neelum and Jhelum rivers vs. surrounding terrain'
   },
-  C_VEGETATION: {
-    name: 'Fatima Jinnah Park Urban Canopy',
-    coords: [73.018, 33.704],
-    desc: 'Urban park canopy vs. Margalla forest reserve and built-up grid'
+  B_URBAN: {
+    name: 'Muzaffarabad City Core',
+    coords: [73.472, 34.358],
+    desc: 'Dense valley urban fabric and commercial core'
   },
-  A_AGRICULTURE: {
-    name: 'Potohar Plains Cropland',
-    coords: [73.140, 33.670],
-    desc: 'Rainfed agricultural parcel vs. urban/barren land'
+  C_FOREST: {
+    name: 'Pir Chinasi Alpine Forest',
+    coords: [73.550, 34.389],
+    desc: 'High-altitude coniferous forest and green ridgeline plateau (~2,900m)'
   }
 };
 
 // Application State
 const state = {
-  currentRef: { lon: 73.018, lat: 33.704, label: 'Fatima Jinnah Park Urban Canopy' },
+  currentRef: { lon: 73.465, lat: 34.383, label: 'Domel River Confluence' },
   year: 2023,
   threshold: 0.75,
   topN: 10,
@@ -66,10 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
  * Initialize Leaflet Map with Field View and Satellite View
  */
 function initMap() {
-  // Centered on Islamabad-Rawalpindi twin cities
+  // Centered on Muzaffarabad Valley
   map = L.map('map', {
-    center: [33.67, 73.05],
-    zoom: 11,
+    center: [34.37, 73.48],
+    zoom: 12,
     zoomControl: false,
     attributionControl: false
   });
@@ -105,7 +105,7 @@ function initMap() {
     fillOpacity: 0.035
   }).addTo(map);
 
-  aoiRectangle.bindTooltip('Islamabad-Rawalpindi Latent Field (1,720 km²)', {
+  aoiRectangle.bindTooltip('Muzaffarabad Latent Field (183 km²)', {
     permanent: false,
     direction: 'top',
     className: 'aoi-tooltip'
@@ -416,7 +416,22 @@ function initEventListeners() {
  */
 async function executeSimilaritySearch() {
   const btn = document.getElementById('execbtn');
+  const lbl = btn.querySelector('.lbl2');
   btn.classList.add('loading');
+
+  // Dynamic loading copy cycling through computation phases
+  const loadingSteps = [
+    `Fetching ${state.year} embeddings...`,
+    'Comparing 64 dimensions...',
+    'Extracting optical spectral indices...',
+    'Ranking candidates...'
+  ];
+  let stepIdx = 0;
+  lbl.textContent = loadingSteps[0];
+  const stepTimer = setInterval(() => {
+    stepIdx = (stepIdx + 1) % loadingSteps.length;
+    lbl.textContent = loadingSteps[stepIdx];
+  }, 1100);
 
   const payload = {
     lon: state.currentRef.lon,
@@ -447,7 +462,9 @@ async function executeSimilaritySearch() {
   } catch (err) {
     alert(`Error running similarity search:\n${err.message}`);
   } finally {
+    clearInterval(stepTimer);
     btn.classList.remove('loading');
+    lbl.textContent = 'Run latent search';
   }
 }
 
@@ -500,6 +517,7 @@ function renderResults(data) {
         <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-2);">
           ${m.lat.toFixed(5)}° N, ${m.lon.toFixed(5)}° E
         </span>
+        ${m.description ? `<p style="margin:6px 0 0;font-size:11px;color:#c9bffa;">${m.description}</p>` : ''}
       `);
 
     marker.on('mouseover', () => highlightMatch(idx, true));
@@ -513,7 +531,7 @@ function renderResults(data) {
   // 4. Draw dynamic geographic connector lines
   drawConnectorLines(matches);
 
-  // 5. Populate Ranked Results Sidebar with 14-bucket spectral bars
+  // 5. Populate Ranked Results Sidebar with 14-bucket spectral bars, descriptions & side-by-side satellite crops
   const resultsContainer = document.getElementById('matches');
   if (matches.length === 0) {
     resultsContainer.innerHTML = `
@@ -526,6 +544,8 @@ function renderResults(data) {
   }
 
   document.getElementById('btnExportJson').style.display = 'inline-block';
+
+  const refThumb = data.reference && data.reference.thumbnail_url ? data.reference.thumbnail_url : '';
 
   let html = '';
   matches.forEach((m, i) => {
@@ -544,15 +564,67 @@ function renderResults(data) {
 
     const rankStr = String(i + 1).padStart(2, '0');
     const nameStr = m.name || `Latent match ${m.lat.toFixed(4)}°N, ${m.lon.toFixed(4)}°E`;
+    const descText = m.description || 'Both areas share latent structural characteristics in the 64-D embedding space.';
+    const matchThumb = m.thumbnail_url || '';
+
+    // Index delta pills
+    let indexPillsHtml = '';
+    if (m.deltas) {
+      const dNdvi = typeof m.deltas.ndvi === 'number' ? m.deltas.ndvi.toFixed(2) : '-';
+      const dNdbi = typeof m.deltas.ndbi === 'number' ? m.deltas.ndbi.toFixed(2) : '-';
+      const dNdmi = typeof m.deltas.ndmi === 'number' ? m.deltas.ndmi.toFixed(2) : '-';
+
+      const okNdvi = m.deltas.ndvi <= 0.12 ? 'match-ok' : '';
+      const okNdbi = m.deltas.ndbi <= 0.12 ? 'match-ok' : '';
+      const okNdmi = m.deltas.ndmi <= 0.12 ? 'match-ok' : '';
+
+      indexPillsHtml = `
+        <div class="index-pills">
+          <span class="index-pill ${okNdvi}" title="Normalized Difference Vegetation Index difference">ΔNDVI: ${dNdvi}</span>
+          <span class="index-pill ${okNdbi}" title="Normalized Difference Built-Up Index difference">ΔNDBI: ${dNdbi}</span>
+          <span class="index-pill ${okNdmi}" title="Normalized Difference Moisture Index difference">ΔNDMI: ${dNdmi}</span>
+        </div>
+      `;
+    }
 
     html += `
       <div class="match" data-index="${i}" onclick="zoomToMatch(${m.lat}, ${m.lon})" onmouseenter="highlightMatch(${i}, true)" onmouseleave="highlightMatch(${i}, false)">
-        <span class="rank">${rankStr}</span>
-        <div>
-          <div class="name">${nameStr}</div>
-          <div class="spectrum">${bars}</div>
+        <div class="match-header">
+          <span class="rank">${rankStr}</span>
+          <div>
+            <div class="name">${nameStr}</div>
+            <div class="spectrum">${bars}</div>
+          </div>
+          <span class="score">${m.score.toFixed(2)}</span>
         </div>
-        <span class="score">${m.score.toFixed(2)}</span>
+
+        <!-- Plain-Language Similarity Description -->
+        <div class="similarity-desc">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a58bff" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>${descText}</span>
+        </div>
+
+        <!-- Side-by-side Optical Satellite Crops (Sentinel-2) -->
+        <div class="thumb-compare-tray">
+          <div class="thumb-box">
+            <div class="thumb-lbl ref"><span>●</span> Ref Optical (S2)</div>
+            <div class="thumb-img-wrap">
+              ${refThumb ? `<img src="${refThumb}" alt="Reference crop" loading="lazy">` : `<div class="thumb-img-placeholder">Optical Crop</div>`}
+            </div>
+          </div>
+          <div class="thumb-box">
+            <div class="thumb-lbl match"><span>●</span> #${m.rank} Match (S2)</div>
+            <div class="thumb-img-wrap">
+              ${matchThumb ? `<img src="${matchThumb}" alt="Candidate crop" loading="lazy">` : `<div class="thumb-img-placeholder">Optical Crop</div>`}
+            </div>
+          </div>
+        </div>
+
+        ${indexPillsHtml}
       </div>
     `;
   });
@@ -565,7 +637,20 @@ function renderResults(data) {
  */
 async function executeClustering() {
   const btn = document.getElementById('btnRunClustering');
+  const lbl = btn.querySelector('.lbl2');
   btn.classList.add('loading');
+
+  const clusterSteps = [
+    'Sampling 64-D landscape...',
+    'Running k-means partitioning...',
+    'Profiling optical biomes...',
+  ];
+  let cStepIdx = 0;
+  if (lbl) lbl.textContent = clusterSteps[0];
+  const cTimer = setInterval(() => {
+    cStepIdx = (cStepIdx + 1) % clusterSteps.length;
+    if (lbl) lbl.textContent = clusterSteps[cStepIdx];
+  }, 1200);
 
   try {
     const res = await fetch('/api/cluster', {
@@ -599,20 +684,42 @@ async function executeClustering() {
       clusteringLayer.addTo(map);
     }
 
-    // 3. Show controls and populate legend
+    // 3. Show controls and populate legend with real auto-labeled biomes
     document.getElementById('clusterControlsSection').style.display = 'block';
     const legendContainer = document.getElementById('clusterLegendList');
-    legendContainer.innerHTML = data.palette.map((color, idx) => `
-      <div class="cluster-legend-item">
-        <span class="cluster-color-badge" style="background: ${color}"></span>
-        <span>Biome Cluster #${idx}</span>
-      </div>
-    `).join('');
+    const clusters = data.clusters || [];
+
+    if (clusters.length > 0) {
+      legendContainer.innerHTML = clusters.map(c => {
+        const ndviStr = c.indices && typeof c.indices.ndvi === 'number' ? c.indices.ndvi.toFixed(2) : '-';
+        const ndbiStr = c.indices && typeof c.indices.ndbi === 'number' ? c.indices.ndbi.toFixed(2) : '-';
+        return `
+          <div class="cluster-legend-item">
+            <span class="cluster-color-badge" style="background: ${c.color}"></span>
+            <div class="cluster-legend-text">
+              <span class="cluster-name">${c.name}</span>
+              <span class="cluster-sub">Cluster #${c.id} &bull; NDVI: ${ndviStr} &bull; Built: ${ndbiStr}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      legendContainer.innerHTML = data.palette.map((color, idx) => `
+        <div class="cluster-legend-item">
+          <span class="cluster-color-badge" style="background: ${color}"></span>
+          <div class="cluster-legend-text">
+            <span class="cluster-name">Biome Cluster #${idx}</span>
+          </div>
+        </div>
+      `).join('');
+    }
 
   } catch (err) {
     alert(`Clustering Error:\n${err.message}`);
   } finally {
+    clearInterval(cTimer);
     btn.classList.remove('loading');
+    if (lbl) lbl.textContent = 'Partition Landscape';
   }
 }
 

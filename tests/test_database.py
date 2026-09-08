@@ -29,7 +29,7 @@ def test_init_db_seeds_default_bookmarks(temp_db):
     bookmarks = get_bookmarks(temp_db)
     assert len(bookmarks) >= 3
     names = [b["name"] for b in bookmarks]
-    assert "Rawal Lake Center" in names
+    assert "Domel Confluence" in names
 
 
 def test_log_query_and_get_history(temp_db):

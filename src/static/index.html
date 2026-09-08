@@ -60,11 +60,11 @@
       <div class="map-controls">
         <div class="mctrl active" id="btnModeField">Field view</div>
         <div class="mctrl" id="btnModeSatellite">Satellite</div>
-        <div class="mctrl" id="btnResetView" title="Reset View to Islamabad AOI">AOI Reset</div>
+        <div class="mctrl" id="btnResetView" title="Reset View to Muzaffarabad AOI">AOI Reset</div>
       </div>
 
       <!-- Bottom Map Status & Dynamic Legend -->
-      <div class="map-status">1,720 km² · 10m/px · epoch <span id="mapEpochYear">2023</span></div>
+      <div class="map-status">183 km² · 10m/px · epoch <span id="mapEpochYear">2023</span></div>
       <div class="legend">
         <span><i style="background:var(--gold);"></i>reference</span>
         <span><i style="background:var(--violet);"></i>match, line weight = similarity</span>
@@ -86,20 +86,20 @@
         <div class="section">
           <div class="section-label">Validation case studies</div>
           <div class="case-grid">
-            <div class="case-card" data-case="B_WATER">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a79ecb" stroke-width="1.6"><path d="M12 3c3 4 6 7.2 6 11a6 6 0 1 1-12 0c0-3.8 3-7 6-11z"/></svg>
-              <div class="name">Rawal Lake</div>
-              <div class="type">deep freshwater</div>
+            <div class="case-card active" data-case="A_RIVER">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a58bff" stroke-width="1.6"><path d="M12 3c3 4 6 7.2 6 11a6 6 0 1 1-12 0c0-3.8 3-7 6-11z"/><path d="M7 15c1.5-1 3-1 4.5 0s3 1 4.5 0"/></svg>
+              <div class="name">Domel</div>
+              <div class="type">River confluence</div>
             </div>
-            <div class="case-card active" data-case="C_VEGETATION">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a58bff" stroke-width="1.6"><path d="M12 2v20M6 8c0 3 2.5 5 6 5s6-2 6-5M4 16c0 3 3 5 8 5s8-2 8-5"/></svg>
-              <div class="name">Fatima Jinnah</div>
-              <div class="type">urban greenery</div>
+            <div class="case-card" data-case="B_URBAN">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a79ecb" stroke-width="1.6"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h2M13 6h2M9 10h2M13 10h2M9 14h2M13 14h2M9 18h6"/></svg>
+              <div class="name">City Core</div>
+              <div class="type">Urban core</div>
             </div>
-            <div class="case-card" data-case="A_AGRICULTURE">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a79ecb" stroke-width="1.6"><rect x="3" y="9" width="18" height="10" rx="1"/><path d="M3 9l9-5 9 5"/></svg>
-              <div class="name">Potohar Plains</div>
-              <div class="type">cropland parcel</div>
+            <div class="case-card" data-case="C_FOREST">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a79ecb" stroke-width="1.6"><path d="M12 2v20M6 8c0 3 2.5 5 6 5s6-2 6-5M4 16c0 3 3 5 8 5s8-2 8-5"/></svg>
+              <div class="name">Pir Chinasi</div>
+              <div class="type">Alpine forest</div>
             </div>
           </div>
         </div>
@@ -110,16 +110,16 @@
           <div class="coord-row">
             <div class="coord-field">
               <label>lat</label>
-              <div class="val" id="displayLat">33.7040</div>
+              <div class="val" id="displayLat">34.3830</div>
             </div>
             <div class="coord-field">
               <label>lon</label>
-              <div class="val" id="displayLon">73.0180</div>
+              <div class="val" id="displayLon">73.4650</div>
             </div>
             <button class="map-btn" id="btnPickPoint">Pick</button>
           </div>
           <div class="active-row">
-            <div class="lbl">Active: <b id="selectionStatus">Fatima Jinnah Park Urban Canopy</b></div>
+            <div class="lbl">Active: <b id="selectionStatus">Domel River Confluence</b></div>
             <button class="save-btn" id="btnBookmarkCurrent">Save</button>
           </div>
         </div>
@@ -197,7 +197,7 @@
       <div id="paneClustering" class="tab-pane" style="display: none;">
         <div class="section">
           <div class="section-label">Spatial pattern clustering (K-Means)</div>
-          <p class="section-desc">Partitions the 1,720 km² AOI into <em>k</em> natural land-cover and spectral-semantic clusters over the unified 64-D embedding space without manual labels.</p>
+          <p class="section-desc">Partitions the 183 km² AOI into <em>k</em> natural land-cover and spectral-semantic clusters over the unified 64-D embedding space without manual labels.</p>
           
           <div class="param" style="margin-top: 14px;">
             <div class="param-head"><span class="name">Number of environmental biomes (k)</span></div>

@@ -112,50 +112,43 @@ To maintain technical focus and respect computational quotas, the following are 
 | **FR-009** | Interactive Map Web Interface | The system shall provide a browser-based user interface supporting pan/zoom, coordinate picking, polygon drawing, parameter configuration, and layer toggles. |
 | **FR-010** | Heatmap Overlay | The system shall render similarity heatmaps as interactive map tile layers directly over standard base maps. |
 | **FR-011** | Results Export | The system shall provide an option to download ranked match coordinates and similarity metrics in JSON or CSV format. |
+| **FR-012** | Optical Verification Thumbnails | The system shall generate true-color RGB satellite crops from Sentinel-2 Surface Reflectance (`COPERNICUS/S2_SR_HARMONIZED`) for both reference and match locations for visual verification. |
+| **FR-013** | Interpretable Optical Similarity Descriptions | The system shall compute independent physical indices (NDVI, NDBI, NDMI) from Sentinel-2 surface reflectance and synthesize deterministic, rule-based plain-language descriptions of environmental commonalities without decomposing latent embeddings into physical variables. |
 
 ---
 
 ## 7. Success Metrics
-- **Response Latency:** For a standard city-scale AOI (~500 km²), similarity heatmap tiles and top-10 candidate extraction must return in under 15 seconds.
-- **Geospatial Consistency:** Known homogeneous surface types (e.g., deep water reservoirs vs. dense forest canopies) must exhibit clear bimodal separation in similarity score distribution (>0.90 within class, <0.30 across discordant classes).
+- **Response Latency:** For a standard city-scale AOI (~180–500 km²), similarity heatmap tiles, top-10 candidate extraction, optical crops, and descriptions must return in under 15 seconds.
+- **Geospatial Consistency:** Known homogeneous surface types (e.g., river confluences vs. dense forest canopies) must exhibit clear bimodal separation in similarity score distribution (>0.90 within class, <0.30 across discordant classes).
 - **Compute Efficiency:** Normal demonstration and testing sessions must stay well within the monthly 150 EECU-hour Community tier quota without triggering throttling.
 - **System Stability:** Zero server crashes caused by unhandled GEE quota or authentication timeout exceptions.
 
 ---
 
-## 8. Resolved Domain Specifications (Formerly Open Questions)
-
-The initial gaps in the source FYP proposal have been resolved as follows:
+## 8. Resolved Domain Specifications
 
 1. **Benchmark Study AOI & Default Target Year:**
-   - **Canonical Region:** Islamabad/Rawalpindi Twin-Cities Metropolitan & Peri-Urban Region (Pakistan).
-   - **Characteristics:** Compact, diverse zone encompassing dense unplanned urban fabric, planned urban grid, urban greenery, protected sub-Himalayan forest canopy (Margalla Hills), major water bodies (Rawal Lake, Simly catchment), and rainfed agricultural parcels.
-   - **Bounding Box (WGS84 `[min_lon, min_lat, max_lon, max_lat]`):** `[72.80, 33.45, 73.25, 33.82]`
+   - **Canonical Region:** Muzaffarabad Valley, Azad Kashmir (Pakistan).
+   - **Characteristics:** Confluence of the Neelum and Jhelum rivers, surrounded by steep montane terrain with extreme annual precipitation (~1,800mm/year). Encompasses diverse land covers across a compact area (deep river confluence, dense river-valley urban fabric, terraced slope agriculture, and high-altitude alpine coniferous forests).
+   - **Bounding Box (WGS84 `[min_lon, min_lat, max_lon, max_lat]`):** `[73.42, 34.32, 73.60, 34.42]`
    - **Bounding Polygon (GeoJSON format):**
      ```json
      {
        "type": "Polygon",
        "coordinates": [[
-         [72.80, 33.45],
-         [73.25, 33.45],
-         [73.25, 33.82],
-         [72.80, 33.82],
-         [72.80, 33.45]
+         [73.42, 34.32],
+         [73.60, 34.32],
+         [73.60, 34.42],
+         [73.42, 34.42],
+         [73.42, 34.32]
        ]]
      }
      ```
-   - **Spatial Extent:** ~41 km (N-S) × 42 km (E-W) ≈ 1,720 km².
-   - **Benchmark Calendar Year:** `2023` (most recent complete cloud-free annual embedding composite).
+   - **Spatial Extent:** ~11.1 km (N-S) × 16.5 km (E-W) ≈ 183 km².
+   - **Benchmark Calendar Year:** `2023` (most recent complete annual composite).
 
-2. **Scope of Clustering and Database Persistence:**
-   - Spatial clustering (FR-008, `ee.Clusterer`) and database session persistence (SQLite) are formally **deferred to Phase 4 (Extensions & Stretch Goals)** per the original proposal's optional designation.
-   - Phases 1 through 3 target strictly the core similarity extraction/search engine, interactive web UI, and empirical validation.
-
-3. **Milestone Deliverable Target:**
-   - **Current Target:** **Phase 1 (Working CLI / Python Core Pipeline)**. Produces a verifiable command-line runner and modules (`src/core/`) that take coordinates/AOI, execute Earth Engine vector dot products, and output ranked candidate coordinates with map tile IDs.
-
-4. **Concrete Validation Case Studies:**
-   - **Case Study A (Agricultural Lands):** Reference parcel in Potohar plateau / Chak Shahzad rainfed cropland (`[73.140, 33.670]`) evaluated for retrieval across the Potohar agricultural belt vs. urban and barren land.
-   - **Case Study B (Water Body Delineation):** Deep water reference point in Rawal Lake (`[73.123, 33.702]`) evaluated against Simly Dam, river beds, and terrestrial land covers.
-   - **Case Study C (Urban Greenery vs. Natural Forest):** Reference canopy in Islamabad urban park (Fatima Jinnah Park, `[73.018, 33.704]`) evaluated against dense Margalla Hills natural reserve (`[73.060, 33.750]`) and surrounding built-up sectors.
+2. **Concrete Validation Case Studies:**
+   - **Case Study A (River Confluence):** Domel, where the Neelum River meets the Jhelum River (`[73.465, 34.383]`, ~34.383°N, 73.465°E). Active default reference site.
+   - **Case Study B (Urban Core):** Central Muzaffarabad valley commercial grid and dense built-up fabric (`[73.472, 34.358]`, ~34.358°N, 73.472°E).
+   - **Case Study C (Alpine Forest):** Pir Chinasi highland coniferous forest and green plateau at ~2,900m elevation (`[73.550, 34.389]`, ~34.389°N, 73.550°E).
 

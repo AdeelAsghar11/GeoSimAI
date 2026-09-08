@@ -13,6 +13,14 @@ from src.core.similarity import (
     get_top_matches,
 )
 from src.core.clustering import run_spatial_clustering
+from src.core.optical import (
+    get_sentinel2_composite,
+    compute_spectral_indices,
+    get_location_thumbnail_url,
+    batch_get_thumbnail_urls,
+    sample_optical_indices,
+    generate_similarity_description,
+)
 from src.core.database import (
     init_db,
     log_query,
@@ -58,7 +66,7 @@ def get_metadata():
             "available_years": Config.AVAILABLE_YEARS,
             "default_year": Config.DEFAULT_YEAR,
             "default_aoi": {
-                "name": "Islamabad-Rawalpindi Twin Cities",
+                "name": "Muzaffarabad Valley",
                 "bounds": Config.DEFAULT_AOI_BOUNDS,
                 "geojson": Config.DEFAULT_AOI_GEOJSON,
             },
@@ -163,10 +171,10 @@ def run_similarity():
             ref_vector = extract_polygon_embedding(image, geometry=ee_ref_geom)
             ref_info = {"type": "polygon"}
         else:
-            # Fallback to Case Study C (Fatima Jinnah Park)
-            coords = Config.CASE_STUDIES["C_VEGETATION"]["coords"]
+            # Fallback to Case Study A (Domel River Confluence)
+            coords = Config.CASE_STUDIES["A_RIVER"]["coords"]
             ref_vector = extract_point_embedding(image, lon=coords[0], lat=coords[1])
-            ref_info = {"type": "point", "coordinates": coords, "preset": "C_VEGETATION"}
+            ref_info = {"type": "point", "coordinates": coords, "preset": "A_RIVER"}
 
         # Compute similarity image
         sim_image = compute_similarity_image(
@@ -189,6 +197,47 @@ def run_similarity():
             top_n=top_n,
             embedding_image=image,
         )
+
+        # Optical Sentinel-2 True-Color Thumbnails & Physical Spectral Indices
+        try:
+            s2_composite = get_sentinel2_composite(year=year, aoi=aoi)
+            # Reference thumbnail
+            if "coordinates" in ref_info:
+                ref_lon, ref_lat = ref_info["coordinates"][0], ref_info["coordinates"][1]
+                ref_info["thumbnail_url"] = get_location_thumbnail_url(
+                    s2_composite, lon=ref_lon, lat=ref_lat, year=year
+                )
+            else:
+                ref_lon, ref_lat = Config.CASE_STUDIES["A_RIVER"]["coords"]
+
+            # If candidates exist, batch compute spectral indices and optical crops
+            if matches:
+                indices_img = compute_spectral_indices(s2_composite)
+                all_pts = [{"lon": ref_lon, "lat": ref_lat}] + [
+                    {"lon": m["lon"], "lat": m["lat"]} for m in matches
+                ]
+                sampled = sample_optical_indices(indices_img, all_pts)
+                ref_indices = sampled[0] if sampled else {"ndvi": 0.0, "ndbi": 0.0, "ndmi": 0.0}
+                ref_info["indices"] = ref_indices
+
+                match_coords = [(m["lon"], m["lat"]) for m in matches]
+                match_thumbs = batch_get_thumbnail_urls(s2_composite, match_coords, year=year)
+
+                for i, m in enumerate(matches):
+                    m_idx = sampled[i + 1] if len(sampled) > i + 1 else {"ndvi": 0.0, "ndbi": 0.0, "ndmi": 0.0}
+                    m["indices"] = m_idx
+                    m["thumbnail_url"] = match_thumbs[i] if i < len(match_thumbs) else ""
+                    desc_res = generate_similarity_description(ref_indices, m_idx)
+                    m["description"] = desc_res["text"]
+                    m["similar_traits"] = desc_res["similar_traits"]
+                    m["deltas"] = desc_res["deltas"]
+        except Exception:
+            # Graceful non-blocking fallback if optical retrieval experiences transient quota/network latency
+            ref_info.setdefault("thumbnail_url", "")
+            for m in matches:
+                m.setdefault("thumbnail_url", "")
+                m.setdefault("description", "Both areas share latent structural characteristics in the 64-D embedding space.")
+                m.setdefault("similar_traits", [])
 
         # Log query to SQLite history
         ref_label = data.get("label") or (
@@ -227,6 +276,21 @@ def run_similarity():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@api_bp.route("/thumbnail", methods=["GET"])
+def get_thumbnail_endpoint():
+    """Retrieve Sentinel-2 true-color crop URL for given coordinates and year."""
+    lon = float(request.args.get("lon", 73.465))
+    lat = float(request.args.get("lat", 34.383))
+    year = int(request.args.get("year", Config.DEFAULT_YEAR))
+    try:
+        initialize_earth_engine()
+        s2 = get_sentinel2_composite(year=year)
+        url = get_location_thumbnail_url(s2, lon=lon, lat=lat, year=year)
+        return jsonify({"success": True, "url": url, "lon": lon, "lat": lat, "year": year})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @api_bp.route("/cluster", methods=["POST"])
 def run_clustering_endpoint():
     """Execute unsupervised spatial k-means clustering across the AOI."""
@@ -253,6 +317,7 @@ def run_clustering_endpoint():
             image=image,
             aoi=aoi,
             n_clusters=n_clusters,
+            year=year,
         )
 
         return jsonify(
@@ -261,6 +326,7 @@ def run_clustering_endpoint():
                 "year": year,
                 "n_clusters": cluster_result["n_clusters"],
                 "palette": cluster_result["palette"],
+                "clusters": cluster_result.get("clusters", []),
                 "tile_url": cluster_result["tile_url"],
             }
         )

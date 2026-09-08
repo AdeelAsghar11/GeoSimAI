@@ -39,5 +39,5 @@ def test_api_metadata_endpoint(client):
     assert data["embedding_dim"] == 64
     assert 2023 in data["available_years"]
     assert "default_aoi" in data
-    assert "case_studies" in data
-    assert "B_WATER" in data["case_studies"]
+    assert "A_RIVER" in data["case_studies"]
+    assert "Muzaffarabad" in data["default_aoi"]["name"]

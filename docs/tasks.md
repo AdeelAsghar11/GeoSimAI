@@ -65,3 +65,17 @@ Track active, completed, and pending tasks. Check items off immediately when com
 - [x] Create `Dockerfile` and `.dockerignore` for containerized deployment.
 - [x] Finalize code cleanup, documentation refresh, and presentation demo packaging.
 
+---
+
+## Phase 5: Muzaffarabad Migration & Optical Verification Features
+- [x] Migrate benchmark Area of Interest to Muzaffarabad Valley (`[73.42, 34.32, 73.60, 34.42]`, ~183 km²).
+- [x] Configure 3 new validation case studies: Domel River Confluence (default active), Muzaffarabad City Core, and Pir Chinasi Alpine Forest (`src/config.py`).
+- [x] Update database seed bookmarks and empirical ground-truth sites to Muzaffarabad landmarks (`src/core/database.py`, `src/core/evaluation.py`).
+- [x] Integrate Sentinel-2 optical imagery pipeline (`COPERNICUS/S2_SR_HARMONIZED`) for true-color satellite crops (`src/core/optical.py`).
+- [x] Implement in-memory cached optical thumbnail generator with parallel retrieval (`src/core/optical.py`, `src/api/routes.py`).
+- [x] Compute physical spectral indices (NDVI, NDBI, NDMI) and synthesize deterministic plain-language similarity descriptions (`src/core/optical.py`).
+- [x] Add dynamic cycling loading copy to search execution button in UI (`src/static/js/app.js`).
+- [x] Render side-by-side satellite crops (Reference vs. Match) and plain-language descriptions in match cards (`src/static/index.html`, `src/static/css/style.css`, `src/static/js/app.js`).
+- [x] Purge all legacy references to Islamabad and Rawalpindi across UI, copy, styles, and configs.
+- [x] Add comprehensive unit test suite for optical spectral analysis (`tests/test_optical.py`).
+

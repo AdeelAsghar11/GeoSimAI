@@ -656,13 +656,17 @@ input[type=range]::-webkit-slider-thumb:hover {
 }
 
 .execute.loading .lbl2 {
-  display: none;
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-1);
 }
 
-/* Ranked Matches List & Spectral Bars */
+/* Ranked Matches List & Optical Crops */
 #matches {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .placeholder-match {
@@ -676,23 +680,27 @@ input[type=range]::-webkit-slider-thumb:hover {
 }
 
 .match {
-  display: grid;
-  grid-template-columns: 20px 1fr auto;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 6px;
-  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  border: 1px solid var(--line);
   cursor: pointer;
-  transition: background .15s ease;
-  border-radius: 6px;
+  transition: all .2s ease;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.015);
 }
 
 .match:hover, .match.active {
   background: var(--panel-raised);
+  border-color: rgba(165, 139, 255, 0.35);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
-.match:last-child {
-  border-bottom: none;
+.match-header {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 10px;
 }
 
 .match .rank {
@@ -734,31 +742,162 @@ input[type=range]::-webkit-slider-thumb:hover {
   font-weight: 700;
 }
 
-/* ================= CLUSTERING & BOOKMARKS TAB ================= */
-.cluster-legend-grid {
+/* Plain-Language Similarity Description */
+.similarity-desc {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #d1c8f8;
+  background: rgba(165, 139, 255, 0.08);
+  border: 1px solid rgba(165, 139, 255, 0.2);
+  padding: 6px 9px;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.similarity-desc svg {
+  flex-shrink: 0;
+  margin-top: 1.5px;
+}
+
+/* Side-by-side Satellite Crop Comparison Tray */
+.thumb-compare-tray {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.thumb-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.thumb-lbl {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.thumb-lbl.ref {
+  color: var(--gold);
+}
+
+.thumb-lbl.match {
+  color: var(--violet);
+}
+
+.thumb-img-wrap {
+  width: 100%;
+  height: 84px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #0d091f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.thumb-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+}
+
+/* Optical Spectral Index Pills */
+.index-pills {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.index-pill {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.index-pill.match-ok {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* ================= CLUSTERING & BOOKMARKS TAB ================= */
+.cluster-legend-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .cluster-legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--void);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 11px;
-  color: var(--text-2);
+  border-radius: 7px;
+  padding: 8px 10px;
+  transition: all .15s ease;
+}
+
+.cluster-legend-item:hover {
+  background: var(--panel-raised);
+  border-color: rgba(165, 139, 255, 0.3);
 }
 
 .cluster-color-badge {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+}
+
+.cluster-legend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cluster-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.cluster-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
 }
 
 .bookmarks-list, .history-list {

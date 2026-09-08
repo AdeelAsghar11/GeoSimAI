@@ -44,6 +44,17 @@ GeoSimAI is designed as a decoupled, three-tier cloud-assisted geospatial applic
 - **Mosaicking Requirement:** For any Area of Interest (AOI) spanning across tile boundaries, an `imageCollection.filterBounds(aoi).mosaic()` operation is required to ensure gap-free coverage.
 - **Linear Composability:** The embedding dataset is explicitly trained to be linearly composable. Spatial averaging (mean pooling) across pixel vectors preserves geometric distance relationships in embedding space.
 
+### Secondary Optical Dataset (Visual Verification & Interpretable Indices)
+- **Dataset Identifier:** `COPERNICUS/S2_SR_HARMONIZED` (Sentinel-2 Level-2A Surface Reflectance, Harmonized)
+- **Spatial Resolution:** 10m (B2, B3, B4, B8) and 20m (B11).
+- **Temporal Filter:** Filtered to match benchmark embedding year, `CLOUDY_PIXEL_PERCENTAGE < 20`, reduced to annual median composite.
+- **RGB True-Color Imagery:** Generated from Red (`B4`), Green (`B3`), and Blue (`B2`), normalized [0, 3000].
+- **Spectral Indices Computed:**
+  - $\text{NDVI} = \frac{B8 - B4}{B8 + B4}$ (Vegetation canopy density)
+  - $\text{NDBI} = \frac{B11 - B8}{B11 + B8}$ (Built-up impervious surface density)
+  - $\text{NDMI} = \frac{B8 - B11}{B8 + B11}$ (Canopy and surface moisture)
+- **Purpose:** Supplies verifiable true-color crops and physically grounded optical indices for rule-based similarity descriptions without violating the non-negotiable principle against decomposing latent embeddings into physical pseudo-variables.
+
 ---
 
 ## 3. Core Algorithms and Mathematical Workflow
@@ -111,8 +122,8 @@ Dataset temporal bounds, default demo AOIs, and configuration constants.
     "embedding_dimensions": 64,
     "default_year": 2023,
     "default_aoi": {
-      "name": "Islamabad-Rawalpindi",
-      "bbox": [72.95, 33.55, 73.20, 33.78]
+      "name": "Muzaffarabad Valley",
+      "bbox": [73.42, 34.32, 73.60, 34.42]
     }
   }
   ```

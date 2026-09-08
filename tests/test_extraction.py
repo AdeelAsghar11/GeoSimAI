@@ -10,9 +10,9 @@ from src.core.similarity import compute_similarity_image
 
 def test_case_studies_configured():
     """Verify all 3 validation case studies have valid coordinates and years."""
-    assert "A_AGRICULTURE" in Config.CASE_STUDIES
-    assert "B_WATER" in Config.CASE_STUDIES
-    assert "C_VEGETATION" in Config.CASE_STUDIES
+    assert "A_RIVER" in Config.CASE_STUDIES
+    assert "B_URBAN" in Config.CASE_STUDIES
+    assert "C_FOREST" in Config.CASE_STUDIES
 
     for key, study in Config.CASE_STUDIES.items():
         assert "coords" in study
