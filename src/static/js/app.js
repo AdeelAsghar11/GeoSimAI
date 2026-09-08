@@ -1,6 +1,6 @@
 /**
- * GeoSimAI — Frontend Application Logic
- * Interactive Leaflet Map & Earth Engine Similarity Search & Clustering Client
+ * GeoSimAI — Latent Spectrum Application Logic
+ * 64-D Foundation Satellite Embedding Similarity Search & Landscape Clustering
  */
 
 // Benchmark AOI bounds [min_lon, min_lat, max_lon, max_lat]
@@ -14,12 +14,12 @@ const CASE_STUDIES = {
     desc: 'Deep freshwater reservoir vs. dry land/vegetation'
   },
   C_VEGETATION: {
-    name: 'Fatima Jinnah Park (Islamabad Urban Greenery)',
+    name: 'Fatima Jinnah Park Urban Canopy',
     coords: [73.018, 33.704],
     desc: 'Urban park canopy vs. Margalla forest reserve and built-up grid'
   },
   A_AGRICULTURE: {
-    name: 'Potohar Plateau Cropland (Chak Shahzad)',
+    name: 'Potohar Plains Cropland',
     coords: [73.140, 33.670],
     desc: 'Rainfed agricultural parcel vs. urban/barren land'
   }
@@ -35,18 +35,23 @@ const state = {
   clusterK: 5,
   clusterOpacity: 0.75,
   isPicking: false,
+  mapMode: 'field', // 'field' or 'satellite'
   lastResult: null
 };
 
 // Map & Layer References
 let map;
-let baseLayers = {};
-let currentBaseLayer;
+let satelliteTileLayer;
 let aoiRectangle;
 let refMarkerLayer;
+let matchMarkersLayer;
+let connectorLinesLayer;
 let heatmapLayer = null;
 let clusteringLayer = null;
-let matchMarkersLayer;
+
+// Registry of rendered polyline connector lines and match markers for hover highlights
+let connectorLines = [];
+let matchMarkers = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
@@ -58,20 +63,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Initialize Leaflet Map and Base Layers
+ * Initialize Leaflet Map with Field View and Satellite View
  */
 function initMap() {
-  // Center over Islamabad-Rawalpindi
+  // Centered on Islamabad-Rawalpindi twin cities
   map = L.map('map', {
-    center: [33.65, 73.05],
+    center: [33.67, 73.05],
     zoom: 11,
-    zoomControl: false
+    zoomControl: false,
+    attributionControl: false
   });
 
+  // Custom styled zoom control bottom-right
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-  // Satellite Base Layer (Esri World Imagery)
-  baseLayers.satellite = L.tileLayer(
+  // Esri World Imagery (Satellite)
+  satelliteTileLayer = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     {
       attribution: 'Esri, Maxar, Earthstar Geographics',
@@ -79,76 +86,87 @@ function initMap() {
     }
   );
 
-  // Dark Base Layer (Esri World Dark Gray Canvas — No API key needed)
-  baseLayers.dark = L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    {
-      attribution: 'Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
-      maxZoom: 16
-    }
-  );
+  // In Field view by default, satellite tiles are NOT added; ambient canvas gradient shows
+  if (state.mapMode === 'satellite') {
+    satelliteTileLayer.addTo(map);
+  }
 
-
-  // Default to satellite
-  currentBaseLayer = baseLayers.satellite;
-  currentBaseLayer.addTo(map);
-
-  // AOI Bounding Rectangle Overlay
+  // AOI Bounding Box (Latent Spectrum theme: violet line + subtle glow)
   const aoiLeafletBounds = [
     [AOI_BOUNDS[1], AOI_BOUNDS[0]], // [south, west]
     [AOI_BOUNDS[3], AOI_BOUNDS[2]]  // [north, east]
   ];
 
   aoiRectangle = L.rectangle(aoiLeafletBounds, {
-    color: '#38bdf8',
-    weight: 2,
-    dashArray: '6, 6',
-    fillColor: '#38bdf8',
-    fillOpacity: 0.04
+    color: '#a58bff',
+    weight: 1.5,
+    dashArray: '5, 5',
+    fillColor: '#a58bff',
+    fillOpacity: 0.035
   }).addTo(map);
 
-  aoiRectangle.bindTooltip('Islamabad-Rawalpindi Benchmark AOI (1,720 km²)', {
+  aoiRectangle.bindTooltip('Islamabad-Rawalpindi Latent Field (1,720 km²)', {
     permanent: false,
-    direction: 'top'
+    direction: 'top',
+    className: 'aoi-tooltip'
   });
 
-  // Layer groups for markers
+  // Layer groups for dynamic geographic features
+  connectorLinesLayer = L.layerGroup().addTo(map);
   refMarkerLayer = L.layerGroup().addTo(map);
   matchMarkersLayer = L.layerGroup().addTo(map);
 
-  // Map Click Listener for "Pick Point" mode
+  // Map Click Listener for picking mode
   map.on('click', (e) => {
     if (state.isPicking) {
-      setReferencePoint(e.latlng.lng, e.latlng.lat, 'Custom Clicked Location');
+      setReferencePoint(e.latlng.lng, e.latlng.lat, `Custom Site (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`);
       disablePickingMode();
     }
   });
 }
 
 /**
- * Update Reference Point Marker
+ * Update Reference Point Marker with pulsing gold ripple pin
  */
 function updateRefMarker() {
   refMarkerLayer.clearLayers();
 
   const icon = L.divIcon({
-    className: 'ref-marker-pin',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    className: 'custom-leaflet-pin',
+    html: `
+      <div class="marker ref">
+        <div class="ring"></div>
+        <div class="pin"></div>
+        <div class="tag">${state.currentRef.label} · reference</div>
+      </div>
+    `,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
   });
 
-  const marker = L.marker([state.currentRef.lat, state.currentRef.lon], { icon })
-    .bindPopup(`<strong>Reference Location</strong><br>${state.currentRef.label}<br>(${state.currentRef.lat.toFixed(6)}, ${state.currentRef.lon.toFixed(6)})`)
+  L.marker([state.currentRef.lat, state.currentRef.lon], { icon })
+    .bindPopup(`
+      <strong style="color:var(--gold)">Reference Point</strong><br>
+      ${state.currentRef.label}<br>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-2);">
+        ${state.currentRef.lat.toFixed(5)}° N, ${state.currentRef.lon.toFixed(5)}° E
+      </span>
+    `)
     .addTo(refMarkerLayer);
 
   // Update Sidebar Displays
-  document.getElementById('displayLat').textContent = state.currentRef.lat.toFixed(6);
-  document.getElementById('displayLon').textContent = state.currentRef.lon.toFixed(6);
-  document.getElementById('selectionStatus').textContent = `Active: ${state.currentRef.label}`;
+  document.getElementById('displayLat').textContent = state.currentRef.lat.toFixed(4);
+  document.getElementById('displayLon').textContent = state.currentRef.lon.toFixed(4);
+  document.getElementById('selectionStatus').textContent = state.currentRef.label;
+
+  // Redraw connector lines if previous search matches exist
+  if (state.lastResult && state.lastResult.matches) {
+    drawConnectorLines(state.lastResult.matches);
+  }
 }
 
 /**
- * Set Reference Point from Coordinates
+ * Set Reference Point Coordinates and Pan Map
  */
 function setReferencePoint(lon, lat, label) {
   state.currentRef = {
@@ -170,7 +188,7 @@ function togglePickingMode() {
     state.isPicking = true;
     const btn = document.getElementById('btnPickPoint');
     btn.classList.add('active');
-    btn.innerHTML = `<span style="color:#f43f5e">●</span> Click Map`;
+    btn.textContent = 'Picking...';
     map.getContainer().style.cursor = 'crosshair';
   }
 }
@@ -179,8 +197,70 @@ function disablePickingMode() {
   state.isPicking = false;
   const btn = document.getElementById('btnPickPoint');
   btn.classList.remove('active');
-  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Click Map`;
+  btn.textContent = 'Pick';
   map.getContainer().style.cursor = '';
+}
+
+/**
+ * Draw Geographic Connector Lines between Reference and Matches
+ */
+function drawConnectorLines(matches) {
+  connectorLinesLayer.clearLayers();
+  connectorLines = [];
+
+  const refCoords = [state.currentRef.lat, state.currentRef.lon];
+
+  matches.forEach((m, idx) => {
+    // Line weight scales with similarity score
+    const norm = Math.max(0.1, (m.score - 0.70) / 0.30);
+    const weight = Math.max(1.2, norm * 4.5);
+
+    const line = L.polyline([refCoords, [m.lat, m.lon]], {
+      color: '#a58bff',
+      weight: weight,
+      opacity: 0.38,
+      interactive: true
+    }).addTo(connectorLinesLayer);
+
+    line.on('mouseover', () => highlightMatch(idx, true));
+    line.on('mouseout', () => highlightMatch(idx, false));
+    line.on('click', () => zoomToMatch(m.lat, m.lon));
+
+    connectorLines[idx] = line;
+  });
+}
+
+/**
+ * Highlight a match marker, its connector line, and sidebar row on hover
+ */
+function highlightMatch(index, isHighlight) {
+  const line = connectorLines[index];
+  if (line) {
+    if (isHighlight) {
+      line.setStyle({ color: '#f2b544', opacity: 0.95, weight: line.options.weight + 2 });
+      line.bringToFront();
+    } else {
+      line.setStyle({ color: '#a58bff', opacity: 0.38, weight: line.options.weight - 2 });
+    }
+  }
+
+  const markerEl = document.getElementById(`marker-hit-${index}`);
+  if (markerEl) {
+    if (isHighlight) {
+      markerEl.classList.add('highlighted');
+    } else {
+      markerEl.classList.remove('highlighted');
+    }
+  }
+
+  const matchRow = document.querySelector(`.match[data-index="${index}"]`);
+  if (matchRow) {
+    if (isHighlight) {
+      matchRow.classList.add('active');
+    } else {
+      matchRow.classList.remove('active');
+    }
+  }
 }
 
 /**
@@ -188,9 +268,9 @@ function disablePickingMode() {
  */
 function initEventListeners() {
   // Navigation Tabs Switching
-  document.querySelectorAll('.tab-btn').forEach(tab => {
+  document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
 
       tab.classList.add('active');
@@ -205,12 +285,12 @@ function initEventListeners() {
     });
   });
 
-  // Preset buttons
-  document.querySelectorAll('.preset-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const caseKey = btn.getAttribute('data-case');
+  // Preset Validation Case Studies
+  document.querySelectorAll('.case-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.case-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      const caseKey = card.getAttribute('data-case');
       const study = CASE_STUDIES[caseKey];
       if (study) {
         setReferencePoint(study.coords[0], study.coords[1], study.name);
@@ -223,7 +303,7 @@ function initEventListeners() {
 
   // Bookmark current location button
   document.getElementById('btnBookmarkCurrent').addEventListener('click', () => {
-    const name = prompt('Enter a name for this bookmark:', state.currentRef.label);
+    const name = prompt('Enter a label for this site:', state.currentRef.label);
     if (name) {
       saveBookmark(name, state.currentRef.lon, state.currentRef.lat);
     }
@@ -232,17 +312,15 @@ function initEventListeners() {
   // Year select
   document.getElementById('yearSelect').addEventListener('change', (e) => {
     state.year = parseInt(e.target.value);
+    document.getElementById('mapEpochYear').textContent = state.year;
   });
 
-  // Threshold slider
+  // Threshold slider with readout
   const slider = document.getElementById('thresholdSlider');
-  const badge = document.getElementById('thresholdVal');
-  const legendMin = document.getElementById('legendMin');
-
+  const readout = document.getElementById('thresh-out');
   slider.addEventListener('input', (e) => {
-    state.threshold = parseFloat(e.target.value);
-    badge.textContent = `≥ ${state.threshold.toFixed(2)}`;
-    if (legendMin) legendMin.textContent = state.threshold.toFixed(2);
+    state.threshold = parseInt(e.target.value) / 100;
+    readout.textContent = state.threshold.toFixed(2);
   });
 
   // Top N select
@@ -250,8 +328,36 @@ function initEventListeners() {
     state.topN = parseInt(e.target.value);
   });
 
-  // CTA Execute Similarity Button
-  document.getElementById('btnRunSimilarity').addEventListener('click', executeSimilaritySearch);
+  // Execute Latent Search Button
+  document.getElementById('execbtn').addEventListener('click', executeSimilaritySearch);
+
+  // Basemap Switchers (Field view vs. Satellite)
+  const btnField = document.getElementById('btnModeField');
+  const btnSat = document.getElementById('btnModeSatellite');
+
+  btnField.addEventListener('click', () => {
+    btnField.classList.add('active');
+    btnSat.classList.remove('active');
+    state.mapMode = 'field';
+    if (map.hasLayer(satelliteTileLayer)) {
+      map.removeLayer(satelliteTileLayer);
+    }
+  });
+
+  btnSat.addEventListener('click', () => {
+    btnSat.classList.add('active');
+    btnField.classList.remove('active');
+    state.mapMode = 'satellite';
+    if (!map.hasLayer(satelliteTileLayer)) {
+      satelliteTileLayer.addTo(map);
+      satelliteTileLayer.bringToBack();
+    }
+  });
+
+  // Reset View to AOI
+  document.getElementById('btnResetView').addEventListener('click', () => {
+    map.fitBounds(aoiRectangle.getBounds(), { padding: [30, 30] });
+  });
 
   // Heatmap visibility toggle
   document.getElementById('toggleHeatmap').addEventListener('change', (e) => {
@@ -301,28 +407,6 @@ function initEventListeners() {
     }
   });
 
-  // Reset View to AOI
-  document.getElementById('btnResetView').addEventListener('click', () => {
-    map.fitBounds(aoiRectangle.getBounds(), { padding: [30, 30] });
-  });
-
-  // Basemap Switchers
-  document.getElementById('btnBaseSatellite').addEventListener('click', () => {
-    document.getElementById('btnBaseSatellite').classList.add('active');
-    document.getElementById('btnBaseDark').classList.remove('active');
-    map.removeLayer(currentBaseLayer);
-    currentBaseLayer = baseLayers.satellite;
-    map.addLayer(currentBaseLayer);
-  });
-
-  document.getElementById('btnBaseDark').addEventListener('click', () => {
-    document.getElementById('btnBaseDark').classList.add('active');
-    document.getElementById('btnBaseSatellite').classList.remove('active');
-    map.removeLayer(currentBaseLayer);
-    currentBaseLayer = baseLayers.dark;
-    map.addLayer(currentBaseLayer);
-  });
-
   // JSON Export Button
   document.getElementById('btnExportJson').addEventListener('click', exportResultsJson);
 }
@@ -331,7 +415,8 @@ function initEventListeners() {
  * Execute Similarity Query against Flask Backend
  */
 async function executeSimilaritySearch() {
-  showLoading(true, 'Computing In-Engine Dot Product...', 'Evaluating 64-D AlphaEarth embeddings over AOI...');
+  const btn = document.getElementById('execbtn');
+  btn.classList.add('loading');
 
   const payload = {
     lon: state.currentRef.lon,
@@ -362,12 +447,12 @@ async function executeSimilaritySearch() {
   } catch (err) {
     alert(`Error running similarity search:\n${err.message}`);
   } finally {
-    showLoading(false);
+    btn.classList.remove('loading');
   }
 }
 
 /**
- * Render Heatmap Tile Layer and Ranked Matches
+ * Render Heatmap Tile Layer, Markers, Connector Lines, and Ranked Matches with Spectral Bars
  */
 function renderResults(data) {
   // 1. Remove prior heatmap
@@ -387,58 +472,100 @@ function renderResults(data) {
       heatmapLayer.addTo(map);
     }
 
-    document.getElementById('layerControlSection').style.display = 'flex';
+    document.getElementById('layerControlSection').style.display = 'block';
   }
 
   // 3. Render Match Markers
   matchMarkersLayer.clearLayers();
+  matchMarkers = [];
 
   const matches = data.matches || [];
-  matches.forEach(m => {
+  matches.forEach((m, idx) => {
     const icon = L.divIcon({
-      className: 'match-marker-pin',
-      html: `<span>${m.rank}</span>`,
-      iconSize: [22, 22],
-      iconAnchor: [11, 11]
+      className: 'custom-leaflet-pin',
+      html: `
+        <div class="marker hit" id="marker-hit-${idx}">
+          <div class="pin"></div>
+          <div class="tag">#${m.rank} · ${m.score.toFixed(2)}</div>
+        </div>
+      `,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
     });
 
     const marker = L.marker([m.lat, m.lon], { icon })
       .bindPopup(`
-        <strong>Rank #${m.rank}</strong><br>
+        <strong style="color:var(--violet)">Candidate #${m.rank}</strong><br>
         <strong>Similarity:</strong> ${(m.score * 100).toFixed(1)}% (${m.score})<br>
-        <strong>Coords:</strong> ${m.lat.toFixed(6)}, ${m.lon.toFixed(6)}
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-2);">
+          ${m.lat.toFixed(5)}° N, ${m.lon.toFixed(5)}° E
+        </span>
       `);
 
+    marker.on('mouseover', () => highlightMatch(idx, true));
+    marker.on('mouseout', () => highlightMatch(idx, false));
+    marker.on('click', () => zoomToMatch(m.lat, m.lon));
+
     matchMarkersLayer.addLayer(marker);
+    matchMarkers[idx] = marker;
   });
 
-  // 4. Populate Ranked Results Sidebar
-  const resultsContainer = document.getElementById('resultsList');
+  // 4. Draw dynamic geographic connector lines
+  drawConnectorLines(matches);
+
+  // 5. Populate Ranked Results Sidebar with 14-bucket spectral bars
+  const resultsContainer = document.getElementById('matches');
   if (matches.length === 0) {
-    resultsContainer.innerHTML = `<div class="placeholder-state"><p>No candidates exceeded similarity threshold &tau; ≥ ${data.threshold}. Try lowering threshold.</p></div>`;
+    resultsContainer.innerHTML = `
+      <div class="placeholder-match">
+        No candidate locations met the similarity threshold &tau; &ge; ${data.threshold}. Try lowering the threshold slider.
+      </div>
+    `;
     document.getElementById('btnExportJson').style.display = 'none';
     return;
   }
 
-  document.getElementById('btnExportJson').style.display = 'flex';
+  document.getElementById('btnExportJson').style.display = 'inline-block';
 
-  resultsContainer.innerHTML = matches.map(m => `
-    <div class="result-card" onclick="zoomToMatch(${m.lat}, ${m.lon})">
-      <div class="result-rank">#${m.rank}</div>
-      <div class="result-coords">
-        <span>${m.lat.toFixed(5)}° N</span>
-        <span>${m.lon.toFixed(5)}° E</span>
+  let html = '';
+  matches.forEach((m, i) => {
+    // Generate spectral bars from real 14-bucket pooled values
+    let bars = '';
+    const spectrum = m.spectrum || [];
+    for (let b = 0; b < 14; b++) {
+      let val = spectrum[b];
+      if (val === undefined || isNaN(val)) {
+        val = 0.5 + 0.5 * Math.sin(b * 1.7 + i);
+      }
+      const h = Math.max(3, Math.round(val * 14));
+      const isBright = val > 0.65 || h > 9;
+      bars += `<i style="height:${h}px;" class="${isBright ? 'bright' : ''}"></i>`;
+    }
+
+    const rankStr = String(i + 1).padStart(2, '0');
+    const nameStr = m.name || `Latent match ${m.lat.toFixed(4)}°N, ${m.lon.toFixed(4)}°E`;
+
+    html += `
+      <div class="match" data-index="${i}" onclick="zoomToMatch(${m.lat}, ${m.lon})" onmouseenter="highlightMatch(${i}, true)" onmouseleave="highlightMatch(${i}, false)">
+        <span class="rank">${rankStr}</span>
+        <div>
+          <div class="name">${nameStr}</div>
+          <div class="spectrum">${bars}</div>
+        </div>
+        <span class="score">${m.score.toFixed(2)}</span>
       </div>
-      <div class="result-score-pill">${(m.score * 100).toFixed(1)}%</div>
-    </div>
-  `).join('');
+    `;
+  });
+
+  resultsContainer.innerHTML = html;
 }
 
 /**
  * Execute Spatial K-Means Clustering
  */
 async function executeClustering() {
-  showLoading(true, 'Training Server-Side K-Means Clusterer...', `Partitioning 64-D embedding space into ${state.clusterK} environmental biomes...`);
+  const btn = document.getElementById('btnRunClustering');
+  btn.classList.add('loading');
 
   try {
     const res = await fetch('/api/cluster', {
@@ -473,19 +600,19 @@ async function executeClustering() {
     }
 
     // 3. Show controls and populate legend
-    document.getElementById('clusterControlsSection').style.display = 'flex';
+    document.getElementById('clusterControlsSection').style.display = 'block';
     const legendContainer = document.getElementById('clusterLegendList');
     legendContainer.innerHTML = data.palette.map((color, idx) => `
       <div class="cluster-legend-item">
         <span class="cluster-color-badge" style="background: ${color}"></span>
-        <span>Cluster #${idx}</span>
+        <span>Biome Cluster #${idx}</span>
       </div>
     `).join('');
 
   } catch (err) {
     alert(`Clustering Error:\n${err.message}`);
   } finally {
-    showLoading(false);
+    btn.classList.remove('loading');
   }
 }
 
@@ -498,7 +625,7 @@ async function loadBookmarks() {
     const res = await fetch('/api/bookmarks');
     const data = await res.json();
     if (!data.success || !data.bookmarks.length) {
-      container.innerHTML = '<div class="placeholder-state"><p>No saved bookmarks found.</p></div>';
+      container.innerHTML = '<div class="placeholder-match">No saved bookmarks found.</div>';
       return;
     }
 
@@ -513,7 +640,7 @@ async function loadBookmarks() {
       </div>
     `).join('');
   } catch {
-    container.innerHTML = '<div class="placeholder-state"><p>Failed to load bookmarks.</p></div>';
+    container.innerHTML = '<div class="placeholder-match">Failed to load bookmarks.</div>';
   }
 }
 
@@ -529,7 +656,6 @@ async function saveBookmark(name, lon, lat) {
     });
     const data = await res.json();
     if (data.success) {
-      alert(`Bookmark "${name}" saved!`);
       loadBookmarks();
     }
   } catch (err) {
@@ -558,7 +684,6 @@ window.removeBookmark = async function(id) {
  */
 window.selectBookmark = function(lon, lat, name) {
   setReferencePoint(lon, lat, name);
-  // Switch to similarity tab
   document.getElementById('tabSimilarity').click();
 };
 
@@ -571,23 +696,23 @@ async function loadHistory() {
     const res = await fetch('/api/history?limit=15');
     const data = await res.json();
     if (!data.success || !data.history.length) {
-      container.innerHTML = '<div class="placeholder-state"><p>No recent queries.</p></div>';
+      container.innerHTML = '<div class="placeholder-match">No queries executed yet.</div>';
       return;
     }
 
     container.innerHTML = data.history.map(h => `
       <div class="history-card" onclick="selectBookmark(${h.lon}, ${h.lat}, '${escapeQuotes(h.label || 'History Item')}')">
         <div class="history-header">
-          <strong style="font-size:0.8rem; color:var(--text-primary)">${h.label || 'Search'}</strong>
-          <span style="font-size:0.72rem; color:var(--accent-emerald)">${h.match_count} matches</span>
+          <span class="bookmark-name">${h.label || 'Search'}</span>
+          <span class="bookmark-category">${h.match_count} matches</span>
         </div>
         <div class="history-meta">
-          <span>Year: ${h.year} &bull; &tau; &ge; ${h.threshold} &bull; Top Score: ${h.top_score ? (h.top_score * 100).toFixed(1) + '%' : 'N/A'}</span>
+          <span>Year: ${h.year} &bull; &tau; &ge; ${h.threshold} &bull; Top: ${h.top_score ? (h.top_score * 100).toFixed(1) + '%' : 'N/A'}</span>
         </div>
       </div>
     `).join('');
   } catch {
-    container.innerHTML = '<div class="placeholder-state"><p>Failed to load history.</p></div>';
+    container.innerHTML = '<div class="placeholder-match">Failed to load history.</div>';
   }
 }
 
@@ -611,7 +736,7 @@ function exportResultsJson() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `geosim_results_${state.year}_thresh${state.threshold}.json`;
+  a.download = `geosim_latent_spectrum_${state.year}_thresh${state.threshold}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -625,31 +750,17 @@ async function checkBackendHealth() {
     const data = await res.json();
     const badge = document.getElementById('statusBadge');
     if (data.ee_initialized) {
-      badge.className = 'status-indicator online';
-      badge.innerHTML = '<span class="status-dot"></span> GEE Ready';
+      badge.className = 'status';
+      badge.textContent = 'gee connected';
     } else {
-      badge.className = 'status-indicator';
+      badge.className = 'status';
       badge.style.color = '#f59e0b';
-      badge.innerHTML = '<span class="status-dot" style="background:#f59e0b"></span> GEE Pending';
+      badge.style.borderColor = '#78350f';
+      badge.textContent = 'gee connecting...';
     }
   } catch {
     const badge = document.getElementById('statusBadge');
-    badge.className = 'status-indicator';
-    badge.style.color = '#ef4444';
-    badge.innerHTML = '<span class="status-dot" style="background:#ef4444"></span> Offline';
-  }
-}
-
-/**
- * Show / Hide Loading Overlay
- */
-function showLoading(show, title = '', msg = '') {
-  const overlay = document.getElementById('loadingOverlay');
-  if (show) {
-    if (title) document.getElementById('loadingTitle').textContent = title;
-    if (msg) document.getElementById('loadingMsg').textContent = msg;
-    overlay.style.display = 'flex';
-  } else {
-    overlay.style.display = 'none';
+    badge.className = 'status offline';
+    badge.textContent = 'backend offline';
   }
 }

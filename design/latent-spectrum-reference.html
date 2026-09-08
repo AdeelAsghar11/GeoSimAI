@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoSimAI: Latent Spectrum concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#120f26;
+    --panel:#1a1638;
+    --panel-raised:#231c4c;
+    --line:#312a5e;
+    --line-bright:#473c86;
+    --violet:#a58bff;
+    --violet-dim:#564a9c;
+    --gold:#f2b544;
+    --gold-dim:#8a691f;
+    --text-1:#ede9fb;
+    --text-2:#a79ecb;
+    --text-3:#635a94;
+    --font-display:'Sora',sans-serif;
+    --font-mono:'Space Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--void);color:var(--text-1);font-family:var(--font-display);}
+  body{min-width:1040px;overflow-x:auto;}
+  .topbar{display:flex;align-items:center;gap:12px;padding:11px 22px;border-bottom:1px solid var(--line);}
+  .topbar h1{font-size:16px;font-weight:800;letter-spacing:-0.01em;}
+  .topbar p{font-size:11px;color:var(--text-3);margin-left:2px;}
+  .topbar .status{margin-left:auto;font-family:var(--font-mono);font-size:10.5px;color:var(--violet);border:1px solid var(--violet-dim);padding:4px 10px;border-radius:20px;}
+
+  .app{display:flex;height:calc(100vh - 45px);min-height:760px;}
+  .map-wrap{flex:1;position:relative;overflow:hidden;background:#0c0a1e;}
+  .field{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(circle at 35% 30%,rgba(165,139,255,.13),transparent 42%),
+      radial-gradient(circle at 65% 75%,rgba(242,181,68,.07),transparent 40%),
+      var(--void);
+  }
+  .dots{position:absolute;inset:0;opacity:.5;}
+  .aoi{position:absolute;top:15%;left:22%;width:52%;height:66%;border:1px solid var(--violet-dim);border-radius:3px;background:repeating-linear-gradient(135deg,rgba(165,139,255,.035) 0 2px,transparent 2px 22px);}
+  .aoi::before{content:'latent field · islamabad-rawalpindi';position:absolute;top:-20px;left:0;font-family:var(--font-mono);font-size:9.5px;color:var(--text-3);}
+
+  svg.links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+  .marker{position:absolute;transform:translate(-50%,-50%);z-index:3;}
+  .marker.ref{z-index:4;}
+  .marker.ref .pin{width:16px;height:16px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 5px rgba(242,181,68,.18);}
+  .marker.ref .ring{position:absolute;inset:-12px;border:1px solid var(--gold);border-radius:50%;opacity:.55;animation:ripple 2.4s ease-out infinite;}
+  @keyframes ripple{0%{transform:scale(.4);opacity:.6;}100%{transform:scale(2);opacity:0;}}
+  .marker.hit .pin{width:10px;height:10px;border-radius:50%;background:var(--violet);box-shadow:0 0 9px rgba(165,139,255,.75);}
+  .marker .tag{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--font-mono);font-size:9.5px;background:var(--panel-raised);border:1px solid var(--line-bright);padding:3px 8px;border-radius:4px;color:var(--text-2);opacity:0;transition:opacity .15s;pointer-events:none;}
+  .marker:hover .tag{opacity:1;}
+
+  .map-controls{position:absolute;top:18px;right:18px;display:flex;gap:8px;}
+  .mctrl{background:rgba(26,22,56,.85);border:1px solid var(--line-bright);padding:7px 12px;border-radius:20px;font-size:11.5px;color:var(--text-2);cursor:pointer;backdrop-filter:blur(6px);}
+  .mctrl.active{color:var(--gold);border-color:var(--gold-dim);}
+  .map-status{position:absolute;bottom:16px;left:20px;font-family:var(--font-mono);font-size:10px;color:var(--text-3);}
+  .legend{position:absolute;bottom:16px;right:20px;display:flex;gap:14px;font-family:var(--font-mono);font-size:9.5px;color:var(--text-3);}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  .sidebar{width:400px;flex:none;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:22px 20px 34px;}
+  .section{margin-bottom:24px;}
+  .section-label{font-size:11.5px;font-weight:600;color:var(--text-2);margin-bottom:11px;padding-left:10px;border-left:2px solid var(--violet-dim);}
+
+  .case-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .case-card{background:var(--panel-raised);border:1px solid var(--line);border-radius:10px;padding:11px 8px;text-align:center;cursor:pointer;transition:border-color .15s,transform .15s;}
+  .case-card:hover{transform:translateY(-1px);border-color:var(--line-bright);}
+  .case-card.active{border-color:var(--violet);background:rgba(165,139,255,.09);}
+  .case-card svg{margin:0 auto 8px;display:block;}
+  .case-card .name{font-size:11.5px;font-weight:600;}
+  .case-card .type{font-family:var(--font-mono);font-size:9px;color:var(--text-3);margin-top:3px;}
+  .case-card.active .type{color:var(--violet);}
+
+  .coord-row{display:flex;gap:9px;margin-bottom:10px;}
+  .coord-field{flex:1;background:var(--void);border:1px solid var(--line);border-radius:8px;padding:8px 11px;}
+  .coord-field label{display:block;font-family:var(--font-mono);font-size:9px;color:var(--text-3);margin-bottom:3px;}
+  .coord-field .val{font-family:var(--font-mono);font-size:14px;color:var(--text-1);}
+  .map-btn{background:var(--panel-raised);border:1px solid var(--line-bright);color:var(--text-1);font-family:var(--font-display);font-size:11.5px;font-weight:600;padding:0 14px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+  .active-row{display:flex;align-items:center;justify-content:space-between;background:var(--void);border:1px solid var(--line);border-radius:8px;padding:9px 12px;}
+  .active-row .lbl{font-size:12px;color:var(--text-2);}
+  .active-row .lbl b{color:var(--text-1);font-weight:600;}
+  .save-btn{background:none;border:none;color:var(--gold);cursor:pointer;font-family:var(--font-display);font-size:11.5px;font-weight:600;}
+
+  .param{margin-bottom:16px;}
+  .param-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .param-head .name{font-size:12.5px;color:var(--text-2);}
+  .param-head .readout{font-family:var(--font-mono);font-size:11.5px;color:var(--gold);}
+  select{width:100%;background:var(--void);border:1px solid var(--line);color:var(--text-1);font-family:var(--font-display);font-size:12.5px;font-weight:500;padding:9px 11px;border-radius:8px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--text-3) 50%),linear-gradient(135deg,var(--text-3) 50%,transparent 50%);background-position:calc(100% - 16px) center,calc(100% - 11px) center;background-size:5px 5px;background-repeat:no-repeat;}
+  input[type=range]{width:100%;height:3px;background:var(--line-bright);appearance:none;-webkit-appearance:none;outline:none;border-radius:3px;}
+  input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--violet);cursor:pointer;box-shadow:0 0 0 4px rgba(165,139,255,.2);}
+  .range-scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9.5px;color:var(--text-3);margin-top:6px;}
+
+  .execute{width:100%;background:linear-gradient(90deg,var(--violet),#8f6fff);color:#160f36;border:none;border-radius:10px;padding:14px;font-family:var(--font-display);font-weight:800;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:24px;}
+  .execute.loading{background:var(--panel-raised);color:var(--text-2);}
+  .execute .spin{width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:currentColor;animation:spin .7s linear infinite;display:none;}
+  .execute.loading .spin{display:block;}
+  .execute.loading .lbl2{display:none;}
+
+  .match{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:11px;padding:10px 6px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .match:hover{background:var(--panel-raised);}
+  .match:last-child{border-bottom:none;}
+  .match .rank{font-family:var(--font-mono);font-size:10px;color:var(--text-3);}
+  .match .name{font-size:12.5px;font-weight:600;}
+  .match .spectrum{display:flex;gap:1.5px;align-items:flex-end;height:14px;margin-top:5px;}
+  .match .spectrum i{width:2.5px;background:var(--violet-dim);border-radius:1px;}
+  .match .score{font-family:var(--font-mono);font-size:13px;color:var(--gold);text-align:right;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+    <circle cx="6" cy="20" r="2.2" fill="#a58bff"/><circle cx="14" cy="7" r="2.2" fill="#f2b544"/><circle cx="21" cy="16" r="2.2" fill="#a58bff"/>
+    <path d="M6 20L14 7M14 7L21 16M6 20L21 16" stroke="#473c86" stroke-width="1"/>
+  </svg>
+  <h1>GeoSimAI</h1>
+  <p>latent spectrum · 64d embedding search</p>
+  <div class="status">gee connected</div>
+</div>
+
+<div class="app">
+  <div class="map-wrap">
+    <div class="field"></div>
+    <svg class="dots" width="100%" height="100%">
+      <circle cx="12%" cy="18%" r="1.4" fill="#a58bff"/><circle cx="22%" cy="9%" r="1" fill="#635a94"/>
+      <circle cx="8%" cy="55%" r="1.2" fill="#635a94"/><circle cx="4%" cy="80%" r="1.4" fill="#a58bff"/>
+      <circle cx="90%" cy="12%" r="1.2" fill="#635a94"/><circle cx="95%" cy="40%" r="1.4" fill="#a58bff"/>
+      <circle cx="88%" cy="85%" r="1" fill="#635a94"/><circle cx="70%" cy="6%" r="1.2" fill="#a58bff"/>
+      <circle cx="55%" cy="94%" r="1.4" fill="#635a94"/><circle cx="35%" cy="4%" r="1" fill="#a58bff"/>
+    </svg>
+    <div class="aoi"></div>
+    <svg class="links" id="links"></svg>
+
+    <div class="marker ref" style="top:44%;left:41%;"><div class="ring"></div><div class="pin"></div><div class="tag">Fatima Jinnah Park · reference</div></div>
+    <div class="marker hit" style="top:36%;left:50%;"><div class="pin"></div><div class="tag">F-9 Park · 0.91</div></div>
+    <div class="marker hit" style="top:58%;left:57%;"><div class="pin"></div><div class="tag">Shakarparian · 0.87</div></div>
+    <div class="marker hit" style="top:32%;left:35%;"><div class="pin"></div><div class="tag">Rose &amp; Jasmine · 0.83</div></div>
+    <div class="marker hit" style="top:64%;left:37%;"><div class="pin"></div><div class="tag">Ayub grove · 0.79</div></div>
+
+    <div class="map-controls">
+      <div class="mctrl active">Field view</div>
+      <div class="mctrl">Satellite</div>
+    </div>
+    <div class="map-status">1,720 km² · 10m/px · epoch 2023</div>
+    <div class="legend"><span><i style="background:#f2b544;"></i>reference</span><span><i style="background:#a58bff;"></i>match, line weight = similarity</span></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="tabs" style="display:flex;gap:2px;background:var(--void);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:22px;">
+      <div class="tab active" style="flex:1;text-align:center;padding:8px 4px;font-size:12.5px;font-weight:600;color:var(--violet);background:var(--panel-raised);border-radius:8px;cursor:pointer;">Similarity</div>
+      <div class="tab" style="flex:1;text-align:center;padding:8px 4px;font-size:12.5px;font-weight:500;color:var(--text-3);border-radius:8px;cursor:pointer;">Clustering</div>
+      <div class="tab" style="flex:1;text-align:center;padding:8px 4px;font-size:12.5px;font-weight:500;color:var(--text-3);border-radius:8px;cursor:pointer;">Bookmarks</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Validation case studies</div>
+      <div class="case-grid">
+        <div class="case-card">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a79ecb" stroke-width="1.6"><path d="M12 3c3 4 6 7.2 6 11a6 6 0 1 1-12 0c0-3.8 3-7 6-11z"/></svg>
+          <div class="name">Rawal Lake</div><div class="type">deep freshwater</div>
+        </div>
+        <div class="case-card active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a58bff" stroke-width="1.6"><path d="M12 2v20M6 8c0 3 2.5 5 6 5s6-2 6-5M4 16c0 3 3 5 8 5s8-2 8-5"/></svg>
+          <div class="name">Fatima Jinnah</div><div class="type">urban greenery</div>
+        </div>
+        <div class="case-card">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a79ecb" stroke-width="1.6"><rect x="3" y="9" width="18" height="10" rx="1"/><path d="M3 9l9-5 9 5"/></svg>
+          <div class="name">Potohar Plains</div><div class="type">cropland parcel</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Reference location</div>
+      <div class="coord-row">
+        <div class="coord-field"><label>lat</label><div class="val">33.7040</div></div>
+        <div class="coord-field"><label>lon</label><div class="val">73.0180</div></div>
+        <button class="map-btn">Pick</button>
+      </div>
+      <div class="active-row"><div class="lbl">Active: <b>Fatima Jinnah Park Urban Canopy</b></div><button class="save-btn">Save</button></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Search parameters</div>
+      <div class="param">
+        <div class="param-head"><span class="name">Annual composite year</span></div>
+        <select><option>2023, benchmark</option><option>2022</option><option>2021</option><option>2020</option></select>
+      </div>
+      <div class="param">
+        <div class="param-head"><span class="name">Similarity threshold</span><span class="readout" id="thresh-out">0.75</span></div>
+        <input type="range" min="50" max="98" value="75" id="thresh" oninput="document.getElementById('thresh-out').textContent='0.'+this.value">
+        <div class="range-scale"><span>0.50 broad</span><span>0.98 strict</span></div>
+      </div>
+      <div class="param">
+        <div class="param-head"><span class="name">Ranked candidates</span></div>
+        <select><option>Top 10</option><option>Top 20</option><option>Top 5</option></select>
+      </div>
+    </div>
+
+    <button class="execute" id="execbtn" onclick="runSearch()">
+      <span class="spin"></span>
+      <span class="lbl2">Run latent search</span>
+    </button>
+
+    <div class="section">
+      <div class="section-label">Ranked matches</div>
+      <div id="matches"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const matches=[
+  {name:'F-9 Park canopy',score:0.91},
+  {name:'Shakarparian green belt',score:0.87},
+  {name:'Rose &amp; Jasmine garden',score:0.83},
+  {name:'Ayub grove treeline',score:0.79}
+];
+const box=document.getElementById('matches');
+matches.forEach((m,i)=>{
+  let bars='';
+  for(let b=0;b<14;b++){
+    const h=Math.round(3+ (Math.sin(b*1.7+i)*0.5+0.5)*11);
+    bars+='<i style="height:'+h+'px;'+(h>9?'background:var(--violet);':'')+'"></i>';
+  }
+  const row=document.createElement('div');
+  row.className='match';
+  row.innerHTML='<span class="rank">0'+(i+1)+'</span><div><div class="name">'+m.name+'</div><div class="spectrum">'+bars+'</div></div><span class="score">'+m.score.toFixed(2)+'</span>';
+  box.appendChild(row);
+});
+
+function drawLinks(){
+  const svg=document.getElementById('links');
+  const wrap=document.querySelector('.map-wrap').getBoundingClientRect();
+  const ref=document.querySelector('.marker.ref').getBoundingClientRect();
+  let out='';
+  document.querySelectorAll('.marker.hit').forEach(el=>{
+    const r=el.getBoundingClientRect();
+    const tag=el.querySelector('.tag').textContent;
+    const score=parseFloat(tag.split('·')[1]);
+    const w=(score-0.7)*10;
+    out+='<line x1="'+(ref.left-wrap.left+ref.width/2)+'" y1="'+(ref.top-wrap.top+ref.height/2)+'" x2="'+(r.left-wrap.left+r.width/2)+'" y2="'+(r.top-wrap.top+r.height/2)+'" stroke="#a58bff" stroke-width="'+w+'" opacity="0.35" />';
+  });
+  svg.innerHTML=out;
+}
+window.addEventListener('load',drawLinks);
+window.addEventListener('resize',drawLinks);
+
+function runSearch(){
+  const btn=document.getElementById('execbtn');
+  btn.classList.add('loading');
+  setTimeout(()=>{btn.classList.remove('loading');drawLinks();},1300);
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>{x.classList.remove('active');x.style.color='var(--text-3)';x.style.background='none';x.style.fontWeight='500';});
+  t.classList.add('active');t.style.color='var(--violet)';t.style.background='var(--panel-raised)';t.style.fontWeight='600';
+}));
+document.querySelectorAll('.case-card').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.case-card').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active');
+}));
+</script>
+</body>
+</html>

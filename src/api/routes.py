@@ -187,6 +187,7 @@ def run_similarity():
             aoi=aoi,
             threshold=threshold,
             top_n=top_n,
+            embedding_image=image,
         )
 
         # Log query to SQLite history
