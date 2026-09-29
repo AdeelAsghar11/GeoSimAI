@@ -27,7 +27,8 @@ secrets/
 .git/
 .gitignore
 
-# Proposal / Scratch
+# Proposal / Scratch / Presentation
 proposal/
+poster_assets/
 *.docx
 *.log

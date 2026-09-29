@@ -1,6 +1,7 @@
 """Flask REST API routes for GeoSimAI."""
 
 from typing import Any, Dict, List
+# pyrefly: ignore [missing-import]
 import ee
 from flask import Blueprint, jsonify, request
 

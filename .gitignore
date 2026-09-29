@@ -44,3 +44,6 @@ Thumbs.db
 # Jupyter / Scratch notebooks
 .ipynb_checkpoints/
 scratch/
+
+# Presentation & Assets
+poster_assets/
