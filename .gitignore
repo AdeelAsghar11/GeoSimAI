@@ -19,9 +19,11 @@ venv.bak/
 credentials.json
 service_account.json
 
-# FYP Proposal Folder (as requested)
+# Proposal & Documentation
 proposal/
 proposal
+docs/
+docs
 
 # Earth Engine & Cloud
 .ee/
